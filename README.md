@@ -1,4 +1,4 @@
-# CellAutomDispers
+# CellAutDispers
 
 This 
 
@@ -14,7 +14,7 @@ This
 Describe how to install your project. Include any dependencies that need to be installed, and provide code examples if necessary.
 
 ```bash
-pip install your-package-name
+pip install CellAutDispers
 ```
 ## Usage
 
