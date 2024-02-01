@@ -1,6 +1,6 @@
-# CellAutDispers
+# CellAutDisp
 
-This 
+This package
 
 ## Table of Contents
 
