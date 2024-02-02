@@ -64,10 +64,11 @@ Functions including their inputs are casted in italic for ease of identification
    3.1 Stepwise Calibration Process
 
    To justify and validate the structure of the model, we recommend a stepwise calibration process. In which model components are only added and specific settings selected if they improve the performance. The order of the stepwise calibration is:
-               1. "meteomatrixsizerepeats", test meteolog = False and meteolog = True, and test different matrixsizes
-               2. "morph", test iter = False and iter = True
-               3. "meteonrrepeat"
-               4. "scaling"
+   
+      1. "meteomatrixsizerepeats", test meteolog = False and meteolog = True, and test different matrixsizes
+      2. "morph", test iter = False and iter = True
+      3. "meteonrrepeat"
+      4. "scaling"
    
    For an example of such a calibration script see:
 
@@ -80,9 +81,9 @@ Functions including their inputs are casted in italic for ease of identification
    - *saveMatrixPlotsPerMonth(matrixsize, meteoparams, meteovalues_df, meteolog = False, suffix = "", addMeteodata = False)*: This function saves the weighted matrix plots for each month. The addMeteodata boolean parameter sets whether to add the meteorological data as text to the plot. it also adds and arrow to the plot to indicate the wind direction.
 
 
-4. **Simple Scenario Modeling**
+5. **Simple Scenario Modeling**
    
-5. **Integration into Models (e.g. more complex Scenario Models, Agent-based Models, ect.)** 
+6. **Integration into Models (e.g. more complex Scenario Models, Agent-based Models, ect.)** 
 
 
 ```from your_package_name import your_function
