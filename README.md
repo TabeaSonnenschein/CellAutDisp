@@ -94,10 +94,16 @@ Functions including their inputs are casted in italic for ease of identification
    3.2 Results Analytics
    - *saveMatrixPlotsPerMonth(matrixsize, meteoparams, meteovalues_df, meteolog = False, suffix = "", addMeteodata = False)*<br><sub>This function saves the weighted matrix plots for each month. The addMeteodata boolean parameter sets whether to add the meteorological data as text to the plot. it also adds and arrow to the plot to indicate the wind direction.<sub>
 
+   - *jointMatrixVisualisation(figures_directory, matrixsize, suffix = "")* <br><sub>This function creates a combined figure of the weighted matrices for each month.<sub>
+
+   - *saveNO2predictions(raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, repeatsparams, meteovalues_df, morphparams = None, scalingcoeffs = [1,1,1], moderator_df = None, iter = True, baseline = False, meteolog = False, suffix = "")*<br><sub> This function saves the NO2 predictions per hour and month to a csv file and print the summary statistics of the predictions. It will select the correct dispersion model based on the input parameters.<sub>
+   
 
 5. **Simple Scenario Modeling**
+- *saveTraffScenarioNO2predictions(trafficfactors, raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, repeatsparams, meteovalues_df, morphparams = None, scalingcoeffs = [1,1,1], moderator_df = None, iter = True, baseline = False, meteolog = False, suffix = "", roadneighborindices = None)*<br><sub> This function saves the NO2 predictions for a set of simple traffic scenarios to a csv file and prints the summary statistics of the predictions. The trafficscenarios are simple adjustments of the traffic and onroad NO2 by the specified factors. The trafficfactors parameters is that list of factors for the traffic scenarios. The function will select the correct dispersion model based on the input parameters.*
+
    
-6. **Integration into Models (e.g. more complex Scenario Models, Agent-based Models, ect.)** 
+6. **Integration into other Models (e.g. more complex Scenario Models, Agent-based Models, ect.)** 
 
 
 ```from your_package_name import your_function
