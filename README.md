@@ -51,8 +51,7 @@ Functions including their inputs are casted in italic for ease of identification
 
    2.3 cellular automata dispersion (different versions)
 
-   - *compute_hourly_dispersion(raster, TrafficNO2, baselineNO2, onroadindices, weightmatrix, nr_repeats, adjuster = None, iter = True, baseline = False,  baseline_coeff = 1, traffemissioncoeff_onroad= 1,  traffemissioncoeff_offroad= 1)* <br>     
-     <sub>Computes the dispersion of the traffic NO2 values for one timestep (e.g. hour). The function uses the correct cellautom_dispersion function from the CA_dispersion module depending on the arguments: adjuster, iter and baseline.<sub>
+   - *compute_hourly_dispersion(raster, TrafficNO2, baselineNO2, onroadindices, weightmatrix, nr_repeats, adjuster = None, iter = True, baseline = False,  baseline_coeff = 1, traffemissioncoeff_onroad= 1,  traffemissioncoeff_offroad= 1)* <br> <sub>Computes the dispersion of the traffic NO2 values for one timestep (e.g. hour). The function uses the correct cellautom_dispersion function from the CA_dispersion module depending on the arguments: adjuster, iter and baseline.<sub>
      
      Below is a specification of the subfunctions from which it selects:
 
@@ -87,7 +86,9 @@ Functions including their inputs are casted in italic for ease of identification
 
    Important Functions:
    - *makeFitnessfunction(calibtype, nr_cpus, matrixsize, raster, baselineNO2, TrafficNO2perhour, onroadindices, observations,  meteovalues_df, metric = "R2", uniqueparams = {},  moderator_df = None)* <br><sub>This function creates a fitness function for the calibration of the dispersion model. The fitness function is dependent on the calibration type and the metric. The calibration type can be one of "meteomatrixsizerepeats", "morph", "meteonrrepeat". The metric can be one of "R2", "RMSE". The uniqueparams argument should contain the parameters that are uniquely required for the calibration type. The moderator_df argument should be provided if the calibration type is "morph". The function returns two functions: the fitness function and the other performance function. The fitness function is the function that is minimized during calibration and is based on the specified metric. The other performance function is the function that is used to evaluate the performance of the model additionally after the calibration is complete.<sub>
+
    - *runGAalgorithm(fitnessfunction, param_settings, popsize, max_iter_noimprov, seed = None)* <br><sub>This function runs the genetic algorithm for the calibration of the dispersion model. The function returns the genetic algorithm object.<sub>
+
    - *PolishSaveGAresults(GAalgorithm, param_settings, fitnessfunction, otherperformancefunction, suffix)*<br><sub>This function polishes the results of the genetic algorithm and saves the results to csv files.<sub>
 
    3.2 Results Analytics
