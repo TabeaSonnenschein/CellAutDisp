@@ -31,7 +31,10 @@ Functions including their inputs are casted in italic for ease of identification
    - morphological data
 
    1.2 Data Processing:
-   
+   - *create_traffic_emission_columns(df, traff_coeff=np.nan,  TrI_coeff=np.nan, traffroadlength_coeff=np.nan, suffix="")*<br>
+      <sub>Calculate traffic-related NO2 emissions based on traffic LUR coefficients and traffic data and the baseline NO2 and produce the Predictor Dataframe (Pred_df.csv) accordingly. The function also saves the Pred_df with the indicated suffix to a csv file.<sub>
+   - *create_Eval_df(grid_sp, gridID, point_observations, observationsID, observations_colnames, desired_observation_colnames = None, suffix = "")*<br>
+     <sub>This function takes a grid and point observations and returns a DataFrame with the observations joined to the grid. The function also saves the DataFrame (Eval_df) to a csv file.<sub>
 
    1.3 Initial Analytics:
    - *PrintSaveSummaryStats(df, dfname, suffix = "")*
