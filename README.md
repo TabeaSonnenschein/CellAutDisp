@@ -38,6 +38,7 @@ Functions including their inputs are casted in italic for ease of identification
    - *SingleVarViolinplot(df,variable, ylabel = None, filesuffix = None)*
 
 2. **Dispersion Model Components**
+   
    2.1 meteorology weighted moving window
     - *returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams, meteovalues)*: This function returns the correct weighted matrix based on the meteolog parameter. If set to True, the log of the meteorological values is taken apart from winddirection. It creates a matrix of weights based on meteorological parameters and wind direction. It takes the distance and degree vectors and calculates the  weight for each cell based on the distance and degree alignment as well as the meteorological factors.  The input meteoparams is a list of 9 parameters that need to be calibrated using the calibration module.
    
@@ -59,7 +60,9 @@ Functions including their inputs are casted in italic for ease of identification
 
 
 3. **Calibration**
+
    3.1 Stepwise Calibration Process
+
    To justify and validate the structure of the model, we recommend a stepwise calibration process. In which model components are only added and specific settings selected if they improve the performance. The order of the stepwise calibration is:
                1. "meteomatrixsizerepeats", test meteolog = False and meteolog = True, and test different matrixsizes
                2. "morph", test iter = False and iter = True
