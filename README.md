@@ -40,11 +40,11 @@ Functions including their inputs are casted in italic for ease of identification
 2. **Dispersion Model Components**
    
    2.1 meteorology weighted moving window
-    - *returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams, meteovalues)*
+    - *returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams, meteovalues)*<br>
       <sub> This function returns the correct weighted matrix based on the meteolog parameter. If set to True, the log of the meteorological values is taken apart from winddirection. It creates a matrix of weights based on meteorological parameters and wind direction. It takes the distance and degree vectors and calculates the  weight for each cell based on the distance and degree alignment as well as the meteorological factors.  The input meteoparams is a list of 9 parameters that need to be calibrated using the calibration module.<sub>
    
    2.2 morphology based adjuster
-   - *provide_adjuster_flexible( morphparams, morphdata)*
+   - *provide_adjuster_flexible( morphparams, morphdata)*<br>
      <sub>This function calculates the adjustment factor for the dispersal kernel based on the morphological features and calibrated parameters (morphparams).  The morphparams is list of parameters that can be calibrated using the calibration module. The first three parameters are in that order (1) the intercept, 
     (2) the maximum adjuster limit (3) the minimum adjuster limit. The remaining parameters are coefficients for the morphological features. The morphdata is dataframe 
     with the morphological features (columns) for each cell (rows). The columns need to be ordered in the same way as the morphparams (from params 3 to how many you like). The morphparams and morphdata are flexible and can be used for any number of morphological features.<sub>
@@ -86,12 +86,12 @@ Functions including their inputs are casted in italic for ease of identification
    For an example of such a calibration script see:
 
    Important Functions:
-   - *makeFitnessfunction(calibtype, nr_cpus, matrixsize, raster, baselineNO2, TrafficNO2perhour, onroadindices, observations,  meteovalues_df, metric = "R2", uniqueparams = {},  moderator_df = None)*: <sub>This function creates a fitness function for the calibration of the dispersion model. The fitness function is dependent on the calibration type and the metric. The calibration type can be one of "meteomatrixsizerepeats", "morph", "meteonrrepeat". The metric can be one of "R2", "RMSE". The uniqueparams argument should contain the parameters that are uniquely required for the calibration type. The moderator_df argument should be provided if the calibration type is "morph". The function returns two functions: the fitness function and the other performance function. The fitness function is the function that is minimized during calibration and is based on the specified metric. The other performance function is the function that is used to evaluate the performance of the model additionally after the calibration is complete.<sub>
-   - *runGAalgorithm(fitnessfunction, param_settings, popsize, max_iter_noimprov, seed = None)*: <sub>This function runs the genetic algorithm for the calibration of the dispersion model. The function returns the genetic algorithm object.<sub>
-   - *PolishSaveGAresults(GAalgorithm, param_settings, fitnessfunction, otherperformancefunction, suffix)*: <sub>This function polishes the results of the genetic algorithm and saves the results to csv files.<sub>
+   - *makeFitnessfunction(calibtype, nr_cpus, matrixsize, raster, baselineNO2, TrafficNO2perhour, onroadindices, observations,  meteovalues_df, metric = "R2", uniqueparams = {},  moderator_df = None)* <br><sub>This function creates a fitness function for the calibration of the dispersion model. The fitness function is dependent on the calibration type and the metric. The calibration type can be one of "meteomatrixsizerepeats", "morph", "meteonrrepeat". The metric can be one of "R2", "RMSE". The uniqueparams argument should contain the parameters that are uniquely required for the calibration type. The moderator_df argument should be provided if the calibration type is "morph". The function returns two functions: the fitness function and the other performance function. The fitness function is the function that is minimized during calibration and is based on the specified metric. The other performance function is the function that is used to evaluate the performance of the model additionally after the calibration is complete.<sub>
+   - *runGAalgorithm(fitnessfunction, param_settings, popsize, max_iter_noimprov, seed = None)* <br><sub>This function runs the genetic algorithm for the calibration of the dispersion model. The function returns the genetic algorithm object.<sub>
+   - *PolishSaveGAresults(GAalgorithm, param_settings, fitnessfunction, otherperformancefunction, suffix)*<br><sub>This function polishes the results of the genetic algorithm and saves the results to csv files.<sub>
 
    3.2 Results Analytics
-   - *saveMatrixPlotsPerMonth(matrixsize, meteoparams, meteovalues_df, meteolog = False, suffix = "", addMeteodata = False)*: This function saves the weighted matrix plots for each month. The addMeteodata boolean parameter sets whether to add the meteorological data as text to the plot. it also adds and arrow to the plot to indicate the wind direction.
+   - *saveMatrixPlotsPerMonth(matrixsize, meteoparams, meteovalues_df, meteolog = False, suffix = "", addMeteodata = False)*<br><sub>This function saves the weighted matrix plots for each month. The addMeteodata boolean parameter sets whether to add the meteorological data as text to the plot. it also adds and arrow to the plot to indicate the wind direction.<sub>
 
 
 5. **Simple Scenario Modeling**
