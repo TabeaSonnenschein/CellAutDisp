@@ -1,6 +1,7 @@
 import numpy as np
 from xrspatial  import focal
 from xrspatial.utils import ngjit
+import pandas as pd
 
 def set_onroadvalues(airpollraster, onroadvalues, newvals = None):
     """This function takes a raster and a dataframe with onroadvalues 
@@ -34,8 +35,9 @@ def apply_adjuster(airpollraster, adjuster):
     return (np.asarray(airpollraster[:]).flatten() + (np.asarray(airpollraster[:]).flatten() * adjuster))
 
 
-def apply_traffemission_coeffs(newvals, onroadvalues, traffemissioncoeff1, traffemissioncoeff2):
-    """_summary_
+def apply_traffemission_coeffs(newvals, onroadvalues, traffemissioncoeff_onroad, traffemissioncoeff_offroad):
+    """This function takes the airpollution values, the onroadvalues, and the traffemission coefficients
+    and applies the traffemission coefficients to the airpollution values.
 
     Args:
         newvals (list(float)): a list with the adjusted airpollution values
@@ -44,10 +46,10 @@ def apply_traffemission_coeffs(newvals, onroadvalues, traffemissioncoeff1, traff
         traffemissioncoeff_offroad (float): a calibration parameter for scaling the offroad emissions
 
     Returns:
-        _type_: _description_
+        list(float): a list with the scaled airpollution values
     """
-    newvals[onroadvalues["int_id"]] = newvals[onroadvalues["int_id"]]*traffemissioncoeff1
-    newvals[~np.isin(np.arange(len(newvals)), onroadvalues["int_id"])] = newvals[~np.isin(np.arange(len(newvals)), onroadvalues["int_id"])]*traffemissioncoeff2
+    newvals[onroadvalues["int_id"]] = newvals[onroadvalues["int_id"]]*traffemissioncoeff_onroad
+    newvals[~np.isin(np.arange(len(newvals)), onroadvalues["int_id"])] = newvals[~np.isin(np.arange(len(newvals)), onroadvalues["int_id"])]*traffemissioncoeff_offroad
     return newvals
 
 
@@ -212,4 +214,59 @@ def cellautom_dispersion_adjust_iter_scaled(weightmatrix, airpollraster, nr_repe
             newvals = apply_adjuster(airpollraster, adjuster)
     newvals = apply_traffemission_coeffs(newvals, onroadvalues, traffemissioncoeff_onroad, traffemissioncoeff_offroad)
     return newvals + (baseline_NO2*baseline_coeff)
+
+
+def compute_hourly_dispersion(raster, TrafficNO2, baselineNO2, onroadindices, weightmatrix, nr_repeats, 
+                              adjuster = None, iter = True, baseline = False,  baseline_coeff = 1, 
+                              traffemissioncoeff_onroad= 1,  traffemissioncoeff_offroad= 1):
+    """Computes the dispersion of the traffic NO2 values for one timestep (e.g. hour). 
+    The function uses the correct cellautom_dispersion function from the CA_dispersion module 
+    depending on the arguments: adjuster, iter and baseline.
+
+    Args:
+        raster (xarray raster): the raster that is used for the dispersion model (xarray format (see package doc)) .
+        TrafficNO2 (list(float)): The traffic NO2 values for each raster cell for that hour. Only the cells on roads should have values the rest default to 0.
+        baselineNO2 (vector(float)): The list of baseline NO2 values for each raster cell.
+        onroadindices (list(int)): A list of the indices of the cells that are on roads.
+        weightmatrix (matrix(float)): the meteorologically defined weight matrix used for the focal operation
+        nr_repeats (int): The number of times the focal operation is repeated.
+        adjuster (list(float), optional): The adjuster values for each cell. Only required if adjuster should be applied. Defaults to None.
+        iter (bool, optional): If the adjuster should be applied in an iterative manner during the iterative applications of the focal operation (iter = True) or afterwards once (iter = False). Defaults to True.
+        baseline (bool, optional): Argument onto whether to apply a scaling based on the baseline and traffic coefficients. Defaults to False.
+        baseline_coeff (int, optional): a calibrated parameter for scaling the baseline NO2. Defaults to 1.
+        traffemissioncoeff_onroad (float): a calibration parameter for scaling the onroad emissions. Defaults to 1.
+        traffemissioncoeff_offroad (float): a calibration parameter for scaling the offroad emissions.Defaults to 1.
+
+
+    Returns:
+        array: the flattened estimated NO2 values of the raster after the dispersion of the traffic NO2 values for that hour.
+    """
+    raster[:] = np.array(TrafficNO2.values).reshape(raster.shape)
+    if adjuster is not None:
+        if iter:
+            if baseline:
+                return cellautom_dispersion_adjust_iter_scaled(weightmatrix = weightmatrix, airpollraster = raster, 
+                                                                                    nr_repeats=nr_repeats, adjuster = adjuster,  baseline_NO2 = baselineNO2, 
+                                                                                    onroadvalues= pd.DataFrame({"int_id": onroadindices, "NO2": TrafficNO2[onroadindices]}),
+                                                                                    baseline_coeff = baseline_coeff, traffemissioncoeff_onroad = traffemissioncoeff_onroad,
+                                                                                    traffemissioncoeff_offroad = traffemissioncoeff_offroad)
+            else:
+                return cellautom_dispersion_adjust_iter(weightmatrix = weightmatrix, airpollraster = raster, 
+                                                                                    nr_repeats=nr_repeats, adjuster = adjuster,  baseline_NO2 = baselineNO2, 
+                                                                                    onroadvalues= pd.DataFrame({"int_id": onroadindices, "NO2": TrafficNO2[onroadindices]}))
+        else:
+            if baseline:
+                return cellautom_dispersion_adjust_scaled(weightmatrix = weightmatrix, airpollraster = raster, 
+                                                                                    nr_repeats=nr_repeats, adjuster = adjuster,  baseline_NO2 = baselineNO2, 
+                                                                                    onroadvalues= pd.DataFrame({"int_id": onroadindices, "NO2": TrafficNO2[onroadindices]}),
+                                                                                    baseline_coeff = baseline_coeff, traffemissioncoeff_onroad = traffemissioncoeff_onroad, 
+                                                                                    traffemissioncoeff_offroad = traffemissioncoeff_offroad)
+            else:
+                return cellautom_dispersion_adjust(weightmatrix = weightmatrix, airpollraster = raster, 
+                                                                                    nr_repeats=nr_repeats, adjuster = adjuster,  baseline_NO2 = baselineNO2, 
+                                                                                    onroadvalues= pd.DataFrame({"int_id": onroadindices, "NO2": TrafficNO2[onroadindices]}))
+    else:
+        return cellautom_dispersion_dummy(weightmatrix = weightmatrix, airpollraster = raster, 
+                                                                 nr_repeats=nr_repeats, baseline_NO2 = baselineNO2, 
+                                                                 onroadvalues= pd.DataFrame({"int_id": onroadindices, "NO2": TrafficNO2[onroadindices]}))
 

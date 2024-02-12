@@ -1,4 +1,3 @@
-import CA_dispersion
 import pandas as pd
 import performance_metrics
 import numpy as np
@@ -8,60 +7,8 @@ from math import sqrt
 from provide_adjuster import provide_adjuster
 from geneticalgorithm2 import geneticalgorithm2  as ga
 from datetime import datetime
-
-def compute_hourly_dispersion(raster, TrafficNO2, baselineNO2, onroadindices, weightmatrix, nr_repeats, 
-                              adjuster = None, iter = True, baseline = False,  baseline_coeff = 1, 
-                              traffemissioncoeff_onroad= 1,  traffemissioncoeff_offroad= 1):
-    """Computes the hourly dispersion of the traffic NO2 values for one hour. 
-    The function uses the correct cellautom_dispersion function from the CA_dispersion module 
-    depending on the arguments.
-
-    Args:
-        raster (xarray raster): the raster that is used for the dispersion model (xarray format (see package doc)) .
-        TrafficNO2 (list(float)): The traffic NO2 values for each raster cell for that hour. Only the cells on roads should have values the rest default to 0.
-        baselineNO2 (vector(float)): The list of baseline NO2 values for each raster cell.
-        onroadindices (list(int)): A list of the indices of the cells that are on roads.
-        weightmatrix (matrix(float)): the meteorologically defined weight matrix used for the focal operation
-        nr_repeats (int): The number of times the focal operation is repeated.
-        adjuster (list(float), optional): The adjuster values for each cell. Only required if adjuster should be applied. Defaults to None.
-        iter (bool, optional): If the adjuster should be applied in an iterative manner during the iterative applications of the focal operation (iter = True) or afterwards once (iter = False). Defaults to True.
-        baseline (bool, optional): Argument onto whether to apply a scaling based on the baseline and traffic coefficients. Defaults to False.
-        baseline_coeff (int, optional): a calibrated parameter for scaling the baseline NO2. Defaults to 1.
-        traffemissioncoeff_onroad (float): a calibration parameter for scaling the onroad emissions. Defaults to 1.
-        traffemissioncoeff_offroad (float): a calibration parameter for scaling the offroad emissions.Defaults to 1.
-
-
-    Returns:
-        array: the flattened estimated NO2 values of the raster after the dispersion of the traffic NO2 values for that hour.
-    """
-    raster[:] = np.array(TrafficNO2.values).reshape(raster.shape)
-    if adjuster is not None:
-        if iter:
-            if baseline:
-                return CA_dispersion.cellautom_dispersion_adjust_iter_scaled(weightmatrix = weightmatrix, airpollraster = raster, 
-                                                                                    nr_repeats=nr_repeats, adjuster = adjuster,  baseline_NO2 = baselineNO2, 
-                                                                                    onroadvalues= pd.DataFrame({"int_id": onroadindices, "NO2": TrafficNO2[onroadindices]}),
-                                                                                    baseline_coeff = baseline_coeff, traffemissioncoeff_onroad = traffemissioncoeff_onroad,
-                                                                                    traffemissioncoeff_offroad = traffemissioncoeff_offroad)
-            else:
-                return CA_dispersion.cellautom_dispersion_adjust_iter(weightmatrix = weightmatrix, airpollraster = raster, 
-                                                                                    nr_repeats=nr_repeats, adjuster = adjuster,  baseline_NO2 = baselineNO2, 
-                                                                                    onroadvalues= pd.DataFrame({"int_id": onroadindices, "NO2": TrafficNO2[onroadindices]}))
-        else:
-            if baseline:
-                return CA_dispersion.cellautom_dispersion_adjust_scaled(weightmatrix = weightmatrix, airpollraster = raster, 
-                                                                                    nr_repeats=nr_repeats, adjuster = adjuster,  baseline_NO2 = baselineNO2, 
-                                                                                    onroadvalues= pd.DataFrame({"int_id": onroadindices, "NO2": TrafficNO2[onroadindices]}),
-                                                                                    baseline_coeff = baseline_coeff, traffemissioncoeff_onroad = traffemissioncoeff_onroad, 
-                                                                                    traffemissioncoeff_offroad = traffemissioncoeff_offroad)
-            else:
-                return CA_dispersion.cellautom_dispersion_adjust(weightmatrix = weightmatrix, airpollraster = raster, 
-                                                                                    nr_repeats=nr_repeats, adjuster = adjuster,  baseline_NO2 = baselineNO2, 
-                                                                                    onroadvalues= pd.DataFrame({"int_id": onroadindices, "NO2": TrafficNO2[onroadindices]}))
-    else:
-        return CA_dispersion.cellautom_dispersion_dummy(weightmatrix = weightmatrix, airpollraster = raster, 
-                                                                 nr_repeats=nr_repeats, baseline_NO2 = baselineNO2, 
-                                                                 onroadvalues= pd.DataFrame({"int_id": onroadindices, "NO2": TrafficNO2[onroadindices]}))
+from CA_dispersion import compute_hourly_dispersion
+import json
 
 def compute_mean_monthly_dispersion(raster, baselineNO2, TrafficNO2perhour, onroadindices, 
                                     weightmatrix, nr_repeats, adjuster=None, iter = True, 
@@ -118,28 +65,79 @@ def compute_MorphAdjust(raster, baselineNO2, TrafficNO2perhour, onroadindices,
     return performance_metrics.compute_Metric(pred=Pred, obs = observations, metric= metric)
 
 def compute_MeteoNrRepeats(params, raster, baselineNO2, TrafficNO2perhour, onroadindices, 
-                meteovalues, observations, meteoparams, adjuster, matrixsize, 
-                nr_repeats, meteolog = False, iter = False, metric = "R"):
+                meteovalues, observations, meteoparams, adjuster, matrixsize
+                , meteolog = False, iter = False, metric = "R"):
     weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= meteoparams, meteovalues = meteovalues)
     nr_repeats = params[0] + (params[1] * meteovalues[2])
     Pred = compute_mean_monthly_dispersion(raster = raster, baselineNO2 = baselineNO2, TrafficNO2perhour= TrafficNO2perhour,
                                            onroadindices = onroadindices, weightmatrix = weightmatrix, nr_repeats=nr_repeats, adjuster=adjuster, iter = iter)
     return performance_metrics.compute_Metric(pred=Pred, obs = observations, metric= metric)
 
+def compute_Scaling(params, raster, baselineNO2, TrafficNO2perhour, onroadindices, 
+                meteovalues, observations, meteoparams, adjuster, matrixsize, repeatsparams,
+                meteolog = False, iter = False, metric = "R"):
+    weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= meteoparams, meteovalues = meteovalues)
+    nr_repeats = repeatsparams[0] + (repeatsparams[1] * meteovalues[2])
+    Pred = compute_mean_monthly_dispersion(raster = raster, baselineNO2 = baselineNO2, TrafficNO2perhour= TrafficNO2perhour,
+                                           onroadindices = onroadindices, weightmatrix = weightmatrix, 
+                                           nr_repeats=nr_repeats, adjuster=adjuster, iter = iter,  baseline = True,
+                                           baseline_coeff = params[0], traffemissioncoeff_onroad= params[1],  
+                                           traffemissioncoeff_offroad= params[2])
+    return performance_metrics.compute_Metric(pred=Pred, obs = observations, metric= metric)
 
-def compute_RIVM_meteomatrixsizerepeats(params, matrixsize,  meteovalues, observations_df, meteolog = False):
+
+
+def computehourlymonthlyperformance(raster, TrafficNO2perhour, baselineNO2, onroadindices, 
+                                    matrixsize, meteoparams, repeatsparams, meteovalues_df, 
+                                    observations, morphparams = None, scalingparams = [1,1,1], 
+                                    moderator_df = None, iter = True, baseline = False, meteolog = False):
+    """This function computes the performance of the dispersion model using hourly and monthly data depending on the arguments.
+    
+    Args:
+        raster (xarray raster): the raster that is used for the dispersion model (xarray format (see package doc)) .
+        TrafficNO2perhour (dataframe(float)): The dataframe with the hourly traffic NO2 values for each raster cell. Only the cells on roads should have values the rest default to 0.
+        baselineNO2 (vector(float)): The list of baseline NO2 values for each raster cell.
+        onroadindices (list(int)): A list of the indices of the cells that are on roads.
+        matrixsize (int): And odd integer that specifies the size of the matrix that is used for the dispersion model.
+        meteovalues_df (dataframe(float)): A dataframe of all meteorological values for each month (months are rows). The dataframe should have the columns "Temperature", "Rain", "Windspeed", "Winddirection" in that order.
+        observations (dataframe(float)): A dataframe of all cells with observations/measured data for each month and each hour (organised as m0h0, m0h1, m0h3..m1h0..m11h23). This data will be used as ground truth data for performance evaluation.
+        meteoparams (list(float)): A list of calibrated meteorological parameters that are used for the weighted matrix.
+        repeatsparams (list(float)): A list of calibrated parameters that are used for the number of repeats of the focal operation. This could be a single value or a value that is dependent on the meteorological values.
+        morphparams (list(float), optional): A list of calibrated parameters that are used for the morphological adjuster. Defaults to None.
+        scalingparams (list(float), optional): A calibrated parameter list for scaling the traffic values and baseline NO2. Defaults to [1,1,1], which means no scaling in effect.
+        moderator_df (_type_, optional): Contains the morphological moderator variables that are used for the adjuster. Defaults to None.
+        iter (bool, optional): If the adjuster should be applied in an iterative manner during the iterative applications of the focal operation (iter = True) or afterwards once (iter = False). Defaults to True.
+        baseline (bool, optional): Argument onto whether to apply a scaling based on the baseline and traffic coefficients. Defaults to False.
+        meteolog (Boolean): if True, the log of the meteorological values is taken apart from winddirection. Defaults to False.
+
+    Returns:
+        float, float, float, float: R2, RMSE, MAE, ME
+    """
+    if morphparams is not None:
+        adjuster = provide_adjuster( morphparams = morphparams, GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
+                            NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
+                            neigh_height_diff = moderator_df["neigh_height_diff"])
+    else:
+        adjuster = None
+    rs, MSEs, MAEs, MEs = [], [],  [], []
     for month in range(12):
-        weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= params[1:], meteovalues = meteovalues)       
-        MSEs, rs, MAEs, MEs = [], [],  [], []
-        for hour in range(24):
-            Pred =  compute_hourly_dispersion(hour, weightmatrix, nr_repeats=params[0])
-            r, MSE, MAE, ME = performance_metrics.compute_all_metrics(pred=Pred, obs = observations_df.loc[month and hour])
-            rs.append(r)
-            MSEs.append(MSE)
-            MAEs.append(MAE)
-            MEs.append(ME)
-    return np.mean(MSEs), np.mean(rs), np.mean(MAEs), np.mean(MEs)
-
+            weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= meteoparams, meteovalues = meteovalues_df.iloc[month].values)
+            if len(repeatsparams) > 1:
+                nr_repeats = repeatsparams[0] + (repeatsparams[1] * meteovalues_df.iloc[month, 2])
+            else: 
+                nr_repeats = int(repeatsparams[0])
+            for hour in range(24):
+                Pred =  compute_hourly_dispersion(raster = raster, TrafficNO2 = TrafficNO2perhour.iloc[:,hour], baselineNO2 = baselineNO2,
+                                                  onroadindices = onroadindices, weightmatrix = weightmatrix, nr_repeats = nr_repeats,
+                                                  adjuster=adjuster, iter = iter, baseline = baseline, baseline_coeff = scalingparams[0], 
+                                                traffemissioncoeff_onroad = scalingparams[1],traffemissioncoeff_offroad = scalingparams[2])
+                r, MSE, MAE, ME = performance_metrics.compute_all_metrics(pred=Pred, obs = observations.iloc[:,(month * 24) + hour])
+                rs.append(r)
+                MSEs.append(MSE)
+                MAEs.append(MAE)
+                MEs.append(ME)
+    performance_metrics.print_all_metrics(np.mean(rs), np.mean(MSEs), np.mean(MAEs), np.mean(MEs), prefix = "HourlyMonthlyEvaluation")
+    return np.mean(rs)**2, sqrt(np.mean(MSEs)), np.mean(MAEs), np.mean(MEs)
 
 
 def makeR2ErrorRMSEfunctions(computefunction, nr_cpus, data_presets, observations, 
@@ -219,6 +217,7 @@ def makeR2ErrorRMSEfunctions(computefunction, nr_cpus, data_presets, observation
             performance_metrics.print_RMSE(np.mean(MSE), prefix = "")
             return sqrt(np.mean(MSE))
         return fitnessfunctionR, fitnessfunctionErrors, fitnessfunctionRMSE
+
 
 
 
@@ -310,12 +309,29 @@ def makeFitnessfunction(calibtype, nr_cpus, matrixsize, raster, baselineNO2,
                                                                                                 nr_cpus = nr_cpus, data_presets = data_presets, 
                                                                                                 observations = observations, meteovalues_df = meteovalues_df,
                                                                                                 uniqueparams  = uniqueparams)
+    elif calibtype == "scaling":
+        if "meteoparams" not in uniqueparams.keys():
+            raise ValueError("uniqueparams must contain meteoparams")
+        if "adjuster" not in uniqueparams.keys():
+            raise ValueError("uniqueparams must contain adjuster")
+        if "iter" not in uniqueparams.keys():
+            raise ValueError("uniqueparams must contain iter")
+        if "meteolog" not in uniqueparams.keys():
+            raise ValueError("uniqueparams must contain meteolog")
+        if "repeatsparams" not in uniqueparams.keys():
+            raise ValueError("uniqueparams must contain repeatsparams")
+        fitnessfunctionR, fitnessfunctionErrors, fitnessfunctionRMSE = makeR2ErrorRMSEfunctions(computefunction = compute_Scaling, 
+                                                                                                nr_cpus = nr_cpus, data_presets = data_presets, 
+                                                                                                observations = observations, meteovalues_df = meteovalues_df,
+                                                                                                uniqueparams  = uniqueparams)
 
     if metric == "R2":
         return fitnessfunctionR, fitnessfunctionErrors
     elif metric == "RMSE":
         return fitnessfunctionRMSE, fitnessfunctionR
-    
+
+
+
 def runGAalgorithm(fitnessfunction, param_settings, popsize, max_iter_noimprov, seed = None):
     """This function runs the genetic algorithm for the calibration of the dispersion model. 
     The function returns the genetic algorithm object.
@@ -421,7 +437,28 @@ def PolishSaveGAresults(GAalgorithm, param_settings, fitnessfunction, otherperfo
     lastGenresults.to_csv(f"GAlast_generation_{suffix}.csv", index=False)
 
 
-
-
+def addnewoptimalparams(optimalparamdict, calibtype, newoptimalparams, suffix):
+    """This function adds the optimal parameters of the genetic algorithm to the optimalparamdict.
+    
+    Args:
+        optimalparamdict (dict): A dictionary of the optimal parameters of the genetic algorithm.
+        calibtype (str): specifies what part of the model should be calibrated. One of "meteomatrixsizerepeats", "morph", "meteonrrepeat".
+        newoptimalparams (list(float)): The newly calibrated optimal params
+        
+    Returns:
+        dict: The updated dictionary of the optimal parameters of the genetic algorithm.
+    """
+    if calibtype == "meteomatrixsizerepeats":
+        optimalparamdict["meteoparams"] = newoptimalparams[1:]
+        optimalparamdict["nr_repeats"] = int(newoptimalparams[0])
+    elif calibtype == "morph":
+        optimalparamdict["morphparams"] = newoptimalparams
+    elif calibtype == "meteonrrepeat":
+        optimalparamdict["repeatsparams"] = newoptimalparams
+    elif calibtype == "scaling":
+        optimalparamdict["scalingparams"] = newoptimalparams
+    with open(f'optimalparams_{suffix}.json', 'w') as f:
+        json.dump(optimalparamdict, f)
+    print("optimal parameters: ", optimalparamdict)
 
     

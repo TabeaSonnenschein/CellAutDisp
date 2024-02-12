@@ -1,6 +1,6 @@
 import numpy as np
 from math import log
-import matplotlib.pyplot as plt
+
 
 def create_matrix_and_calculate_vectors(matrixsize):
     """ Create an matrixsize x matrixsize matrix and calculate the relative 
@@ -26,8 +26,8 @@ def create_matrix_and_calculate_vectors(matrixsize):
             # Calculate relative vector coordinates
             relative_x, relative_y = i - center_x, j - center_y
 
-            # distance = np.linalg.norm([relative_x, relative_y]) # Euclidean norm vector distance
-            distance = max(abs(relative_x), abs(relative_y)) #Chebyshev Distance
+            distance = np.linalg.norm([relative_x, relative_y]) # Euclidean norm vector distance
+            # distance = max(abs(relative_x), abs(relative_y)) #Chebyshev Distance
             distances[i, j] = distance
 
             # # Calculate the degree of the vector from the cell to the center
@@ -45,8 +45,7 @@ def create_matrix_and_calculate_vectors(matrixsize):
 
 def continuous_meteo_matrix(matrixsize, meteoparams, temperature, rain, windspeed, winddirection):
     """ This function creates a matrix of weights based on meteorological parameters and wind direction.
-    It takes the distance and degree vectors and calculates the 
-    weight for each cell based on the distance and degree alignment as well as the meteorological factors.
+    It takes the distance and degree vectors into account and calculates the weight for each cell based on the distance and degree alignment as well as the meteorological factors.
     The input meteoparams is a list of 9 parameters that need to be calibrated using the calibration module.
 
     Args:
@@ -112,7 +111,9 @@ def continuous_meteo_matrix_log(matrixsize, meteoparams, temperature, rain, wind
     return continuous_meteo_matrix(matrixsize, meteoparams, log(temperature), log(rain), log(windspeed), winddirection)
 
 def returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams, meteovalues):
-    """This function returns the correct weighted matrix based on the meteolog parameter.
+    """This function returns the correct weighted matrix based on the meteolog parameter. This function creates a matrix of weights based on meteorological parameters and wind direction.
+    It takes the distance and degree vectors into account and calculates the weight for each cell based on the distance and degree alignment as well as the meteorological factors.
+    The input meteoparams is a list of 9 parameters that need to be calibrated using the calibration module.
 
     Args:
         meteolog (Boolean): if True, the log of the meteorological values is taken apart from winddirection
@@ -132,39 +133,4 @@ def returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams, meteovalues):
                                                    temperature= meteovalues[0], rain = meteovalues[1],
                                                    windspeed = meteovalues[2], winddirection = meteovalues[3])
 
-def plotWeightedMatrix(matrixsize, meteoparams, meteovalues, meteolog, suffix = "", show = False):
-    """This function plots the weighted matrix.
 
-    Args:
-        matrixsize (int): An odd integer that determines the size of the matrix
-        meteoparams (list(float)): parameterlist from the calibration module
-        meteovalues (list(float)): a list of meteorological values order as: temperature, rain, windspeed, winddirection
-        meteolog (Boolean): if True, the log of the meteorological values is taken apart from winddirection
-        suffix (str, optional): An string extension to the filename (e.g. months, matrixsize, any specification). Defaults to "".
-        show (bool, optional): indicating whether to show the plot or not.  Defaults to False.
-    
-    Returns:
-        None
-    """
-    weight_matrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams, meteovalues)
-    plt.imshow(weight_matrix)
-    plt.colorbar()
-    plt.savefig(f"weighted_matrix{suffix}.png")
-    if show:
-        plt.show()
-    plt.close()
-        
-def saveMatrixPlotsPerMonth(matrixsize, meteoparams, meteovalues_df, meteolog = False, suffix = ""):
-    """This function saves the weighted matrix plots for each month.
-
-    Args:
-        matrixsize (int): An odd integer that determines the size of the matrix
-        meteoparams (list(float)): parameterlist from the calibration module
-        meteovalues_df (dataframe(float)): A dataframe of all meteorological values for each month (months are rows). The dataframe should have the columns "Temperature", "Rain", "Windspeed", "Winddirection" in that order.
-        meteolog (Boolean): if True, the log of the meteorological values is taken apart from winddirection
-
-    """
-    for month in range(12):
-        meteovalues = meteovalues_df.iloc[month].values
-        plotWeightedMatrix(matrixsize, meteoparams, meteovalues, meteolog, suffix = f"MS{matrixsize}_M{month+1}{suffix}", show = False)
-    

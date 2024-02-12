@@ -81,7 +81,7 @@ def compute_Metric(pred, obs, metric = "R2"):
     """
     if metric == "R2":
         return compute_R(pred, obs)
-    elif metric == "MSE":
+    elif metric == "RMSE":
         return compute_MSE(pred, obs)
     elif metric == "Errors":
         return compute_Errors(pred, obs)
