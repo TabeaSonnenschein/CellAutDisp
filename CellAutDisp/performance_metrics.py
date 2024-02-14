@@ -2,6 +2,7 @@ from scipy.stats import pearsonr
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import numpy as np
 from math import sqrt
+import pandas as pd
 
 
 def compute_R(pred, obs):
@@ -147,9 +148,18 @@ def printPerformancePerMonthHour(MSE, R, MAE, ME, prefix = ""):
             
 
 def SavePerformancePerMonthHour(MSE, R, MAE, ME, filename, prefix = ""):
-    pd.DataFrame({"Month": [i for i in range(1,13) for j in range(24)],
+    pd.DataFrame({"Prefix": [prefix for i in range(12*24)],
+                  "Month": [i for i in range(1,13) for j in range(24)],
                   "Hour": [j+1 for i in range(12) for j in range(24)],
                   "R2": [r**2 for r in R], 
                   "RMSE": [sqrt(mse) for mse in MSE], 
                   "MAE": MAE, 
-                  "ME": ME}).to_csv(prefix+filename, index = False)
+                  "ME": ME}).to_csv(prefix+filename+".csv", index = False)
+
+def SavePerformancePerMonth(MSE, R, MAE, ME, filename, prefix = ""):
+    pd.DataFrame({"Prefix": [prefix for i in range(12)],
+                  "Month": [i for i in range(1,13)],
+                  "R2": [r**2 for r in R], 
+                  "RMSE": [sqrt(mse) for mse in MSE], 
+                  "MAE": MAE, 
+                  "ME": ME}).to_csv(prefix+filename+".csv", index = False)

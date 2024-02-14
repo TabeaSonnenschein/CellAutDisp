@@ -12,14 +12,14 @@ dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
 os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
 
 ## Set the parameters
-cellsize = "50m"
+cellsize = "25m"
 nr_cpus = 15
-suffix = "TrV_TrI_noTrA"
+suffix = "TrV_TrI_noTrA2"
 calibtype = "produceMonthlyHourlyPerformance"
 popsize, max_iter_noimprov, seed = 20, 5, 42
 calibdata = "Palmes"
 GA = False
-meteolog = False
+meteolog = True
 iter = False
 
 
@@ -126,6 +126,7 @@ elif calibtype == "meteonrrepeat":
     matrixsize = 3
     with open(f"optimalparams_{cellsize}_morphMS{matrixsize}iter{iter}MeteoLog{meteolog}.json", "r") as read_file:
         optimalparams = json.load(read_file)
+    del optimalparams["nr_repeats"]
     adjuster = provide_adjuster( morphparams = optimalparams["morphparams"], GreenCover = moderator_df["GreenCover"],
                                 openspace_fraction = moderator_df["openspace_fraction"], NrTrees = moderator_df["NrTrees"],
                                 building_height = moderator_df["building_height"], neigh_height_diff = moderator_df["neigh_height_diff"])
@@ -199,13 +200,12 @@ if calibtype == "produceMonthlyHourlyPerformance":
     with open(f"optimalparams_{cellsize}_scalingMS{matrixsize}iter{iter}MeteoLog{meteolog}.json", "r") as read_file:
         optimalparams = json.load(read_file)
     del optimalparams["nr_repeats"]
-    
     cal.computehourlymonthlyperformance(baseline= True, **data_presets_RIVM, 
                                         **optimalparams, moderator_df = moderator_df, 
-                                        saveHourlyMonthly=True, prefix= "RIVM")
-    
-    
-    
+                                        saveHourlyMonthly=True, prefix= "RIVM"+cellsize)
+    cal.computemonthlyperformance(baseline= True, **data_presets, 
+                                **optimalparams, moderator_df = moderator_df, 
+                                 saveMonthly=True, prefix= "Palmes"+cellsize)
     GA = False
     
     

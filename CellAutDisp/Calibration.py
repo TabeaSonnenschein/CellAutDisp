@@ -144,6 +144,63 @@ def computehourlymonthlyperformance(raster, TrafficNO2perhour, baselineNO2, onro
         performance_metrics.SavePerformancePerMonthHour(MSE = MSEs, R = rs, MAE = MAEs, ME = MEs, filename = "HourlyMonthlyPerformance", prefix = prefix)
     return np.mean(rs)**2, sqrt(np.mean(MSEs)), np.mean(MAEs), np.mean(MEs)
 
+def computemonthlyperformance(raster, TrafficNO2perhour, baselineNO2, onroadindices, 
+                                matrixsize, meteoparams, repeatsparams, meteovalues_df, 
+                                observations, morphparams = None, scalingparams = [1,1,1], 
+                                moderator_df = None, iter = True, baseline = False, meteolog = False, 
+                                saveMonthly = False, prefix = ""):
+    """This function computes the performance of the dispersion model using hourly and monthly data depending on the arguments.
+    
+    Args:
+        raster (xarray raster): the raster that is used for the dispersion model (xarray format (see package doc)) .
+        TrafficNO2perhour (dataframe(float)): The dataframe with the hourly traffic NO2 values for each raster cell. Only the cells on roads should have values the rest default to 0.
+        baselineNO2 (vector(float)): The list of baseline NO2 values for each raster cell.
+        onroadindices (list(int)): A list of the indices of the cells that are on roads.
+        matrixsize (int): And odd integer that specifies the size of the matrix that is used for the dispersion model.
+        meteovalues_df (dataframe(float)): A dataframe of all meteorological values for each month (months are rows). The dataframe should have the columns "Temperature", "Rain", "Windspeed", "Winddirection" in that order.
+        observations (dataframe(float)): A dataframe of all cells with observations/measured data for each month and each hour (organised as m0h0, m0h1, m0h3..m1h0..m11h23). This data will be used as ground truth data for performance evaluation.
+        meteoparams (list(float)): A list of calibrated meteorological parameters that are used for the weighted matrix.
+        repeatsparams (list(float)): A list of calibrated parameters that are used for the number of repeats of the focal operation. This could be a single value or a value that is dependent on the meteorological values.
+        morphparams (list(float), optional): A list of calibrated parameters that are used for the morphological adjuster. Defaults to None.
+        scalingparams (list(float), optional): A calibrated parameter list for scaling the traffic values and baseline NO2. Defaults to [1,1,1], which means no scaling in effect.
+        moderator_df (_type_, optional): Contains the morphological moderator variables that are used for the adjuster. Defaults to None.
+        iter (bool, optional): If the adjuster should be applied in an iterative manner during the iterative applications of the focal operation (iter = True) or afterwards once (iter = False). Defaults to True.
+        baseline (bool, optional): Argument onto whether to apply a scaling based on the baseline and traffic coefficients. Defaults to False.
+        meteolog (Boolean): if True, the log of the meteorological values is taken apart from winddirection. Defaults to False.
+        saveMonthly (bool, optional): If the performance of the model should be saved. Defaults to False.
+        prefix (str, optional): A Prefix that will be added in front of the print. Defaults to "".
+
+    Returns:
+        float, float, float, float: R2, RMSE, MAE, ME
+    """
+    if morphparams is not None:
+        adjuster = provide_adjuster( morphparams = morphparams, GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
+                            NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
+                            neigh_height_diff = moderator_df["neigh_height_diff"])
+    else:
+        adjuster = None
+    rs, MSEs, MAEs, MEs = [], [],  [], []
+    for month in range(12):
+            weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= meteoparams, meteovalues = meteovalues_df.iloc[month].values)
+            if len(repeatsparams) > 1:
+                nr_repeats = repeatsparams[0] + (repeatsparams[1] * meteovalues_df.iloc[month, 2])
+            else: 
+                nr_repeats = int(repeatsparams[0])
+            Pred = compute_mean_monthly_dispersion(raster = raster, baselineNO2 = baselineNO2, TrafficNO2perhour= TrafficNO2perhour,
+                                           onroadindices = onroadindices, weightmatrix = weightmatrix, 
+                                           nr_repeats=nr_repeats, adjuster=adjuster, iter = iter,  baseline = baseline,
+                                           baseline_coeff = scalingparams[0], traffemissioncoeff_onroad= scalingparams[1],  
+                                           traffemissioncoeff_offroad= scalingparams[2])
+            r, MSE, MAE, ME = performance_metrics.compute_all_metrics(pred=Pred, obs = observations.iloc[:,month])
+            rs.append(r)
+            MSEs.append(MSE)
+            MAEs.append(MAE)
+            MEs.append(ME)
+    performance_metrics.print_all_metrics(np.mean(rs), np.mean(MSEs), np.mean(MAEs), np.mean(MEs), prefix = prefix + "MonthlyEvaluation")
+    if saveMonthly:
+        performance_metrics.SavePerformancePerMonth(MSE = MSEs, R = rs, MAE = MAEs, ME = MEs, filename = "MonthlyPerformance", prefix = prefix)
+    return np.mean(rs)**2, sqrt(np.mean(MSEs)), np.mean(MAEs), np.mean(MEs)
+
 
 def makeR2ErrorRMSEfunctions(computefunction, nr_cpus, data_presets, observations, 
                              meteovalues_df, uniqueparams, adjustercalib = False, 

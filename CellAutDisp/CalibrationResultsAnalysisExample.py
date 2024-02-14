@@ -1,22 +1,50 @@
-from analytics import saveMatrixPlotsPerMonth, jointMatrixVisualisation
+from analytics import saveMatrixPlotsPerMonth, jointMatrixVisualisation, SplitYAxis2plusLineGraph
 import os
 import pandas as pd
+import json
 
 dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
 os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
-monthlyWeather2019 = pd.read_csv(os.path.join(dataFolder, "Weather", "monthlyWeather2019TempDiff.csv")) # Read monthlyWeather2019 DataFrame
-
-
-meteovalues_df= monthlyWeather2019[["Temperature", "Rain", "Windspeed", "Winddirection"]]
-meteoparams = [0.409800614, 0.011336538, 0.162193556, -0.096161606,  0.674606756, 0.830105679, 0.304843606, 0.077548563, 4.926544219]
-# meteoparams = [0.232669543,1.820935633,1.716740457,1.961315493,1.640064053,0.077584399, 1.825339797,1.392984166,0.158231089]
-# meteoparams = [ 0.98962192, 1.99499355, 1.86909367, 1.94074353, 0.25499547,  1.19864123, 1.64563954, 1.23736286, 0.05472525]
-
-matrixsize = 7
 cellsize = "50m"
-os.chdir(os.path.join(dataFolder, f"Air Pollution Determinants\TrV_TrI_noTrA weightmatrices {cellsize}"))
+matrixsize = 3
+iter = False
+meteolog = False
+with open(f"optimalparams_{cellsize}_scalingMS{matrixsize}iter{iter}MeteoLog{meteolog}.json", "r") as read_file:
+        optimalparams = json.load(read_file)
+        
+analytics = [
+    # "MonthlyMovingWindowMaps", 
+    "HourlyMonthlyPerformanceCharts", 
+    "MonthlyPerformanceCharts"]
 
-saveMatrixPlotsPerMonth(matrixsize, meteoparams, meteovalues_df, meteolog = False, suffix=f"_{cellsize}", addMeteodata=True)
-jointMatrixVisualisation(os.getcwd(), matrixsize, suffix = f"_{cellsize}")
+if "MonthlyMovingWindowMaps" in analytics:
+    monthlyWeather2019 = pd.read_csv(os.path.join(dataFolder, "Weather", "monthlyWeather2019TempDiff.csv")) # Read monthlyWeather2019 DataFrame
+    meteovalues_df= monthlyWeather2019[["Temperature", "Rain", "Windspeed", "Winddirection"]]
+    os.chdir(os.path.join(dataFolder, f"Air Pollution Determinants\TrV_TrI_noTrA weightmatrices {cellsize}"))
+    saveMatrixPlotsPerMonth(matrixsize, optimalparams["meteoparams"], meteovalues_df, meteolog = False, suffix=f"_{cellsize}", addMeteodata=True)
+    jointMatrixVisualisation(os.getcwd(), matrixsize, suffix = f"_{cellsize}")
 
+if "HourlyMonthlyPerformanceCharts" in analytics:
+    hourlymonthlyprefix = "RIVM"
+    HourlyMonthly = pd.read_csv(f"{hourlymonthlyprefix}{cellsize}HourlyMonthlyPerformance.csv")
+    HourlyMonthly_clean = HourlyMonthly[['Month', 'Hour', 'R2', 'RMSE', 'ME']]
+    HourlyMonthly_month = HourlyMonthly_clean.groupby('Month').mean()
+    SplitYAxis2plusLineGraph(df = HourlyMonthly_month, xvar="Month", yvar1_list = ["R2"], yvar2_list= ["RMSE", "ME"],
+                         yvarlabel1_list = ["R2"], yvarlabel2_list = ["Root Mean Squared Error", "Mean Error"],  ylimmin1 = 0.4,ylinmax1 = 0.8,ylimmin2 = -25,ylinmax2 = 25, 
+                         xlabel = "Performance per Month", 
+                         ylabel1 = "R2", ylabel2 =  "Error (µg/m3)", suffix= f"_{hourlymonthlyprefix}")
 
+    HourlyMonthly_hour = HourlyMonthly_clean.groupby('Hour').mean()
+    print(HourlyMonthly_hour)
+    SplitYAxis2plusLineGraph(df = HourlyMonthly_hour, xvar="Hour", yvar1_list = ["R2"], yvar2_list= ["RMSE", "ME"],
+                         yvarlabel1_list = ["R2"], yvarlabel2_list = ["Root Mean Squared Error", "Mean Error"],  ylimmin1 = 0.35,ylinmax1 = 0.8,ylimmin2 = -25,ylinmax2 = 25, 
+                         xlabel = "Performance per Hour", 
+                         ylabel1 = "R2", ylabel2 =  "Error (µg/m3)", suffix= f"_{hourlymonthlyprefix}")
+
+if "MonthlyPerformanceCharts" in analytics:
+    monthlyprefix = "Palmes"
+    Monthly = pd.read_csv(f"{monthlyprefix}{cellsize}MonthlyPerformance.csv")
+    SplitYAxis2plusLineGraph(df = Monthly, xvar="Month", yvar1_list = ["R2"], yvar2_list= ["RMSE", "ME"],
+                     yvarlabel1_list = ["R2"], yvarlabel2_list = ["Root Mean Squared Error", "Mean Error"],  ylimmin1 = 0.3,ylinmax1 = 0.5,ylimmin2 = -10,ylinmax2 = 12, 
+                     xlabel = "Performance per Month", 
+                     ylabel1 = "R2", ylabel2 =  "Error (µg/m3)", suffix= f"_{monthlyprefix}")
