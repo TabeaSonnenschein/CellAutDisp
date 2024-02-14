@@ -15,7 +15,7 @@ os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
 cellsize = "50m"
 nr_cpus = 15
 suffix = "TrV_TrI_noTrA"
-calibtype = "scaling"
+calibtype = "produceMonthlyHourlyPerformance"
 popsize, max_iter_noimprov, seed = 20, 5, 42
 calibdata = "Palmes"
 GA = False
@@ -193,6 +193,21 @@ elif calibtype == "scaling":
     uniqueparamsRIVM["morphparams"] = optimalparams["morphparams"]
     cal.computehourlymonthlyperformance(scalingparams=optimalparams50m, baseline= True, **data_presets_RIVM, matrixsize=matrixsize, 
                                         **uniqueparamsRIVM, moderator_df = moderator_df)
+
+if calibtype == "produceMonthlyHourlyPerformance":
+    matrixsize = 3
+    with open(f"optimalparams_{cellsize}_scalingMS{matrixsize}iter{iter}MeteoLog{meteolog}.json", "r") as read_file:
+        optimalparams = json.load(read_file)
+    del optimalparams["nr_repeats"]
+    
+    cal.computehourlymonthlyperformance(baseline= True, **data_presets_RIVM, 
+                                        **optimalparams, moderator_df = moderator_df, 
+                                        saveHourlyMonthly=True, prefix= "RIVM")
+    
+    
+    
+    GA = False
+    
     
 if GA == True:
     GAalgorithm = cal.runGAalgorithm(fitnessfunction, param_settings, popsize, max_iter_noimprov)

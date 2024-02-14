@@ -135,3 +135,21 @@ def print_RMSE(MSE, prefix = ""):
         prefix (str, optional): A Prefix that will be added in front of the print. Defaults to "".
     """
     print(f"{prefix} RMSE: {sqrt(MSE)}")
+    
+    
+def printPerformancePerMonthHour(MSE, R, MAE, ME, prefix = ""):
+    for month in range(12):
+        for hour in range(24):
+            print(f"{prefix} R2 {month+1} {hour+1}: {R[month*24 + hour]**2}")
+            print(f"{prefix} RMSE {month+1} {hour+1}: {sqrt(MSE[month*24 + hour])}")
+            print(f"{prefix} MAE {month+1} {hour+1}: {MAE[month*24 + hour]}")
+            print(f"{prefix} ME {month+1} {hour+1}: {ME[month*24 + hour]}")
+            
+
+def SavePerformancePerMonthHour(MSE, R, MAE, ME, filename, prefix = ""):
+    pd.DataFrame({"Month": [i for i in range(1,13) for j in range(24)],
+                  "Hour": [j+1 for i in range(12) for j in range(24)],
+                  "R2": [r**2 for r in R], 
+                  "RMSE": [sqrt(mse) for mse in MSE], 
+                  "MAE": MAE, 
+                  "ME": ME}).to_csv(prefix+filename, index = False)

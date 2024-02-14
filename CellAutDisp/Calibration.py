@@ -90,7 +90,8 @@ def compute_Scaling(params, raster, baselineNO2, TrafficNO2perhour, onroadindice
 def computehourlymonthlyperformance(raster, TrafficNO2perhour, baselineNO2, onroadindices, 
                                     matrixsize, meteoparams, repeatsparams, meteovalues_df, 
                                     observations, morphparams = None, scalingparams = [1,1,1], 
-                                    moderator_df = None, iter = True, baseline = False, meteolog = False):
+                                    moderator_df = None, iter = True, baseline = False, meteolog = False, 
+                                    saveHourlyMonthly = False, prefix = ""):
     """This function computes the performance of the dispersion model using hourly and monthly data depending on the arguments.
     
     Args:
@@ -109,6 +110,8 @@ def computehourlymonthlyperformance(raster, TrafficNO2perhour, baselineNO2, onro
         iter (bool, optional): If the adjuster should be applied in an iterative manner during the iterative applications of the focal operation (iter = True) or afterwards once (iter = False). Defaults to True.
         baseline (bool, optional): Argument onto whether to apply a scaling based on the baseline and traffic coefficients. Defaults to False.
         meteolog (Boolean): if True, the log of the meteorological values is taken apart from winddirection. Defaults to False.
+        saveHourlyMonthly (bool, optional): If the performance of the model should be saved. Defaults to False.
+        prefix (str, optional): A Prefix that will be added in front of the print. Defaults to "".
 
     Returns:
         float, float, float, float: R2, RMSE, MAE, ME
@@ -136,7 +139,9 @@ def computehourlymonthlyperformance(raster, TrafficNO2perhour, baselineNO2, onro
                 MSEs.append(MSE)
                 MAEs.append(MAE)
                 MEs.append(ME)
-    performance_metrics.print_all_metrics(np.mean(rs), np.mean(MSEs), np.mean(MAEs), np.mean(MEs), prefix = "HourlyMonthlyEvaluation")
+    performance_metrics.print_all_metrics(np.mean(rs), np.mean(MSEs), np.mean(MAEs), np.mean(MEs), prefix = prefix + "HourlyMonthlyEvaluation")
+    if saveHourlyMonthly:
+        performance_metrics.SavePerformancePerMonthHour(MSE = MSEs, R = rs, MAE = MAEs, ME = MEs, filename = "HourlyMonthlyPerformance", prefix = prefix)
     return np.mean(rs)**2, sqrt(np.mean(MSEs)), np.mean(MAEs), np.mean(MEs)
 
 
