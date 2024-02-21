@@ -9,6 +9,7 @@ from calibration import compute_hourly_dispersion
 import pandas as pd
 import seaborn as sns
 from matplotlib_scalebar.scalebar import ScaleBar
+import time
 
 def plotWeightedMatrix(matrixsize, meteoparams, meteovalues, meteolog, suffix = "", show = False, addMeteodata = False):
     """This function plots the weighted matrix.
@@ -149,7 +150,7 @@ def estimateMonthlyHourlyValues(raster, TrafficNO2perhour, baselineNO2, onroadin
     Results_df = pd.concat([Results_df, pd.DataFrame(preds, columns=colnames)], axis=1)
     return Results_df
 
-def saveMonthlyHourlyredictions(raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, 
+def saveMonthlyHourlyPredictions(raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, 
                        repeatsparams, meteovalues_df, morphparams = None, scalingparams = [1,1,1], 
                        moderator_df = None, iter = True, baseline = False, 
                        meteolog = False, suffix = "", stressor = "NO2"):
@@ -256,7 +257,7 @@ def saveTrafficScenarioPredictions(trafficfactors, raster, TrafficNO2perhour,
     for scenario in trafficfactors:
         print("Computing Scenario: ", scenario)
         trafficscenarios = TrafficNO2perhour * scenario
-        Pred = saveMonthlyHourlyredictions(raster = raster, TrafficNO2perhour = trafficscenarios, 
+        Pred = saveMonthlyHourlyPredictions(raster = raster, TrafficNO2perhour = trafficscenarios, 
                                         baselineNO2 = baselineNO2,
                                         onroadindices = onroadindices, matrixsize=matrixsize, 
                                         meteoparams=meteoparams, repeatsparams=repeatsparams, 
@@ -269,6 +270,62 @@ def saveTrafficScenarioPredictions(trafficfactors, raster, TrafficNO2perhour,
                                       ScenarioPredictions, cellsubgroups)
     ScenarioPredictions.to_csv(f"Scenario{stressor}predictions_{suffix}.csv", index=False)
     return ScenarioPredictions
+
+
+
+def measureMonthlyHourlyComputationTime(raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, 
+                       repeatsparams, meteovalues_df, morphparams = None, scalingparams = [1,1,1], 
+                       moderator_df = None, iter = True, baseline = False, meteolog = False, 
+                       stressor = "NO2", suffix = ""):
+    """This function measures the computation time for the NO2 predictions for each hour and month and returns a dataframe with the computation times. It will select the correct dispersion model
+    
+    Args:
+        raster (xarray raster): the raster that is used for the dispersion model (xarray format (see package doc)) .
+        TrafficNO2perhour (dataframe(float)): The dataframe with the hourly traffic NO2 values for each raster cell. Only the cells on roads should have values the rest default to 0.
+        baselineNO2 (vector(float)): The list of baseline NO2 values for each raster cell.
+        onroadindices (list(int)): A list of the indices of the cells that are on roads.
+        matrixsize (int): And odd integer that specifies the size of the matrix that is used for the dispersion model.
+        meteoparams (list(float)): A list of calibrated meteorological parameters that are used for the weighted matrix.
+        repeatsparams (list(float)): A list of calibrated parameters that are used for the number of repeats of the focal operation. This could be a single value or a value that is dependent on the meteorological values.
+        meteovalues_df (dataframe(float)): A dataframe of all meteorological values for each month (months are rows). The dataframe should have the columns "Temperature", "Rain", "Windspeed", "Winddirection" in that order.
+        morphparams (list(float), optional): A list of calibrated parameters that are used for the morphological adjuster. Defaults to None.
+        scalingparams (list(float), optional): A calibrated parameter list for scaling the traffic values and baseline NO2. Defaults to [1,1,1], which means no scaling in effect.
+        moderator_df (_type_, optional): Contains the morphological moderator variables that are used for the adjuster. Defaults to None.
+        iter (bool, optional): If the adjuster should be applied in an iterative manner during the iterative applications of the focal operation (iter = True) or afterwards once (iter = False). Defaults to True.
+        baseline (bool, optional): Argument onto whether to apply a scaling based on the baseline and traffic coefficients. Defaults to False.
+        meteolog (boolean): if True, the log of the meteorological values is taken apart from winddirection. Defaults to False.
+        stressor (str, optional): The stressor for which the predictions are made. Defaults to "NO2".
+    
+    Returns:
+        dataframe: A dataframe with the computation time measurements for each hour and month.
+    """
+    if morphparams is not None:
+        adjuster = provide_adjuster( morphparams = morphparams, GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
+                            NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
+                            neigh_height_diff = moderator_df["neigh_height_diff"])
+    else:
+        adjuster = None
+    comptime, months, hours, = [], [], []
+    for month in range(12):
+        print("Computing Month: ", month + 1)
+        weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= meteoparams, meteovalues = meteovalues_df.iloc[month].values)
+        if len(repeatsparams) > 1:
+            nr_repeats = repeatsparams[0] + (repeatsparams[1] * meteovalues_df.iloc[month, 2])
+        else: 
+            nr_repeats = int(repeatsparams[0])        
+        for hour in range(24):
+            start = time.time()
+            Pred =  compute_hourly_dispersion(raster = raster, TrafficNO2 = TrafficNO2perhour.iloc[:,hour], baselineNO2 = baselineNO2,
+                                                  onroadindices = onroadindices, weightmatrix = weightmatrix, nr_repeats = nr_repeats,
+                                                  adjuster=adjuster, iter = iter, baseline = baseline, baseline_coeff = scalingparams[0], 
+                                                traffemissioncoeff_onroad = scalingparams[1],traffemissioncoeff_offroad = scalingparams[2])
+            end = time.time()  # Record end time of hour computation
+            comptime.append(end - start)
+            months.append(month)
+            hours.append(hour)
+    CompTime_df = pd.DataFrame({"month": months , "hour": hours, "ComputationTime": comptime})
+    CompTime_df.to_csv(f"ComputationTime_{stressor}_{suffix}.csv", index = False)
+    return CompTime_df
 
 
 
@@ -552,3 +609,5 @@ def saveScenarioDescripts(Scenarios, cellsize, stressor, cellsubgroups = None):
                 ScenarioPredictions.loc[index, f"{celltype}_Min"] =  min(cellvals)
     ScenarioPredictions.to_csv(f"Scenario{stressor}predictions_{cellsize}.csv", index=False)
     return ScenarioPredictions
+
+

@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import xarray as xr
 import json
-from analytics import saveMonthlyHourlyredictions, saveTrafficScenarioPredictions
+from analytics import saveMonthlyHourlyPredictions, saveTrafficScenarioPredictions, measureMonthlyHourlyComputationTime
 
 dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
 os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
@@ -43,11 +43,14 @@ data_presets = {
     "moderator_df": moderator_df
 }
 
-saveMonthlyHourlyredictions(**data_presets, **optimalparams, iter = iter, 
-                               baseline = True, meteolog = iter, suffix= cellsize)
+# saveMonthlyHourlyPredictions(**data_presets, **optimalparams, iter = iter, 
+#                                baseline = True, meteolog = iter, suffix= cellsize)
 
-Scenarios = [0, 0.5, 1, 1.5, 2, 2.5, 3]
-saveTrafficScenarioPredictions( trafficfactors = Scenarios, **data_presets, 
-                               **optimalparams, iter = iter, baseline = True, 
-                                meteolog = iter, suffix= cellsize +"xd", 
-                                cellsubgroups = Pred_df[["int_id", "ON_ROAD", "ROAD_NEIGHBOR"]])
+# Scenarios = [0, 0.5, 1, 1.5, 2, 2.5, 3]
+# saveTrafficScenarioPredictions( trafficfactors = Scenarios, **data_presets, 
+#                                **optimalparams, iter = iter, baseline = True, 
+#                                 meteolog = iter, suffix= cellsize +"xd", 
+#                                 cellsubgroups = Pred_df[["int_id", "ON_ROAD", "ROAD_NEIGHBOR"]])
+
+measureMonthlyHourlyComputationTime(**data_presets, **optimalparams, iter = iter, 
+                               baseline = True, meteolog = iter, suffix= cellsize)
