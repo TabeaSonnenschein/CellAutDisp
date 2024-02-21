@@ -319,13 +319,48 @@ def measureMonthlyHourlyComputationTime(raster, TrafficNO2perhour, baselineNO2, 
                                                   onroadindices = onroadindices, weightmatrix = weightmatrix, nr_repeats = nr_repeats,
                                                   adjuster=adjuster, iter = iter, baseline = baseline, baseline_coeff = scalingparams[0], 
                                                 traffemissioncoeff_onroad = scalingparams[1],traffemissioncoeff_offroad = scalingparams[2])
-            end = time.time()  # Record end time of hour computation
+            end = time.time()  
             comptime.append(end - start)
             months.append(month)
             hours.append(hour)
+        if month == 0:
+            start = time.time()
+            Pred =  compute_hourly_dispersion(raster = raster, TrafficNO2 = TrafficNO2perhour.iloc[:,0], baselineNO2 = baselineNO2,
+                                                  onroadindices = onroadindices, weightmatrix = weightmatrix, nr_repeats = nr_repeats,
+                                                  adjuster=adjuster, iter = iter, baseline = baseline, baseline_coeff = scalingparams[0], 
+                                                traffemissioncoeff_onroad = scalingparams[1],traffemissioncoeff_offroad = scalingparams[2])
+            end = time.time()
+            comptime[0] = end - start
     CompTime_df = pd.DataFrame({"month": months , "hour": hours, "ComputationTime": comptime})
     CompTime_df.to_csv(f"ComputationTime_{stressor}_{suffix}.csv", index = False)
+    print(f"Mean Computation Time {suffix}: ", np.mean(comptime))
     return CompTime_df
+
+def plotComputationTime(comp_time_df, stressor, cellsize):
+    # lineplot
+    plt.figure(figsize=(10, 6))
+    comp_time_df["month"] = comp_time_df["month"] + 1
+    for month in range(1,13):
+        month_data = comp_time_df[comp_time_df["month"] == month]
+        plt.plot(month_data["hour"], month_data["ComputationTime"], label=f"Month {month + 1}")
+
+    plt.title(f"Computation Time per Hour ({cellsize} x {cellsize} grid)")
+    plt.xlabel("Hour")
+    plt.ylabel("Computation Time (seconds)")
+    plt.legend(title="Month", loc="upper right")
+    plt.grid(True)
+    plt.savefig(f'ComputationTime_Lineplot_{stressor}_{cellsize}.png', bbox_inches='tight', dpi = 400)
+    plt.close()
+    
+    # Heatmap
+    # Pivot the DataFrame to have months as rows and hours as columns
+    pivot_df = comp_time_df.pivot(index='month', columns='hour', values='ComputationTime')
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(pivot_df, cmap='viridis', annot=True, fmt=".2f", linewidths=.5)
+    plt.title(f"Heatmap of Computation Time ({cellsize} x {cellsize} grid)")
+    plt.xlabel("Hour")
+    plt.ylabel("Month")
+    plt.savefig(f'ComputationTime_Heatmap_{stressor}_{cellsize}.png', bbox_inches='tight', dpi = 400)
 
 
 

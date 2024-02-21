@@ -2,23 +2,24 @@ import os
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry.point import Point
-from analytics import PrintSaveSummaryStats, MapSpatialDataFixedColorMapSetofVariables, ParallelMapSpatialDataFixedColorMap, ParallelMapSpatialData_StreetsFixedColorMap, ViolinOverTimeColContinous, SplitYAxis2plusLineGraph, meltPredictions
+from analytics import PrintSaveSummaryStats, MapSpatialDataFixedColorMapSetofVariables, ParallelMapSpatialDataFixedColorMap, ParallelMapSpatialData_StreetsFixedColorMap, ViolinOverTimeColContinous, SplitYAxis2plusLineGraph, meltPredictions, plotComputationTime
 from joblib import Parallel, delayed
 
 dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
 os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
 
-cellsize = "25m"
+cellsize = "50m"
 crs = 28992
 stressor = "NO2"
 unit = "(µg/m3)"
 analysistype = [
     # "StatusQuoPredMaps", 
-    "StatusQuoPredMapsZoomed", 
+    # "StatusQuoPredMapsZoomed", 
     # "ViolinPlotsStressors", 
-    # "ScenarioLinePlot"
+    # "ScenarioLinePlot",
+    "ComputationTimeVisualisation"
     ]
-predsuffix = "TrV_TrI_noTrA2"
+predsuffix = "TrV_TrI_noTrA"
 
 parallelIfPossible = True
 addStreet = False
@@ -110,3 +111,6 @@ if "ScenarioLinePlot" in analysistype:
                             ylimmin2 = ylimmin2,ylinmax2 = ylimmax2,  xlabel = "Traffic Scenarios: Factor of Status Quo Traffic Volume",
                             ylabel1 = stressor + " " + unit, ylabel2 =  stressor + " " + unit, showplots=False, suffix= cellsize)
 
+if "ComputationTimeVisualisation" in analysistype:
+    CompTime_df = pd.read_csv(f"ComputationTime_{stressor}_{cellsize}.csv")
+    plotComputationTime(CompTime_df, stressor, cellsize = cellsize)
