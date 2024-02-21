@@ -10,8 +10,8 @@ dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
 os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
 
 ## Set the parameters
-cellsize = "25m"
-suffix = "TrV_TrI_noTrA2"
+cellsize = "50m"
+suffix = "TrV_TrI_noTrA"
 calibdata = "Palmes"
 GA = True
 if cellsize == "50m":
