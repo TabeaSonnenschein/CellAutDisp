@@ -14,14 +14,14 @@ stressor = "NO2"
 unit = "(µg/m3)"
 analysistype = [
     # "StatusQuoPredMaps", 
-    # "StatusQuoPredMapsZoomed", 
+    "StatusQuoPredMapsZoomed", 
     # "ViolinPlotsStressors", 
-    "ScenarioLinePlot"
+    # "ScenarioLinePlot"
     ]
 predsuffix = "TrV_TrI_noTrA2"
 
 parallelIfPossible = True
-addStreet = True
+addStreet = False
 Neighborhoodextent = False
 
 if any([x in analysistype for x in ["StatusQuoPredMaps", "StatusQuoPredMapsZoomed"]]):
