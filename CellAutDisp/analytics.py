@@ -5,7 +5,7 @@ import os
 from create_weighted_matrix import returnCorrectWeightedMatrix
 import numpy as np
 from provide_adjuster import provide_adjuster
-from Calibration import compute_hourly_dispersion
+from calibration import compute_hourly_dispersion
 import pandas as pd
 import seaborn as sns
 from matplotlib_scalebar.scalebar import ScaleBar
@@ -90,37 +90,69 @@ def jointMatrixVisualisation(figures_directory, matrixsize, suffix = ""):
 
     plt.tight_layout()
     plt.savefig(f"combined_weightmatices_MS{matrixsize}_{suffix}.png", dpi = 500)  # Save the combined figure
+    plt.close()
 
 
-
-def estimate_monthlyhourly_NO2(raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, 
-                       repeatsparams, meteovalues_df, morphparams = None, scalingcoeffs = [1,1,1], 
-                       moderator_df = None, iter = True, baseline = False, meteolog = False):
-    Results_df = pd.DataFrame(baselineNO2)
+def estimateMonthlyHourlyValues(raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, 
+                       repeatsparams, meteovalues_df, morphparams = None, scalingparams = [1,1,1], 
+                       moderator_df = None, iter = True, baseline = False, meteolog = False, 
+                       stressor = "NO2"):
+    """This function estimates the stressor values for each hour and month and returns a dataframe with the predictions. It will select the correct dispersion model
+    based on the input parameters.
+    
+    Args:
+        raster (xarray raster): the raster that is used for the dispersion model (xarray format (see package doc)) .
+        TrafficNO2perhour (dataframe(float)): The dataframe with the hourly traffic NO2 values for each raster cell. Only the cells on roads should have values the rest default to 0.
+        baselineNO2 (vector(float)): The list of baseline NO2 values for each raster cell.
+        onroadindices (list(int)): A list of the indices of the cells that are on roads.
+        matrixsize (int): And odd integer that specifies the size of the matrix that is used for the dispersion model.
+        meteoparams (list(float)): A list of calibrated meteorological parameters that are used for the weighted matrix.
+        repeatsparams (list(float)): A list of calibrated parameters that are used for the number of repeats of the focal operation. This could be a single value or a value that is dependent on the meteorological values.
+        meteovalues_df (dataframe(float)): A dataframe of all meteorological values for each month (months are rows). The dataframe should have the columns "Temperature", "Rain", "Windspeed", "Winddirection" in that order.
+        morphparams (list(float), optional): A list of calibrated parameters that are used for the morphological adjuster. Defaults to None.
+        scalingparams (list(float), optional): A calibrated parameter list for scaling the traffic values and baseline NO2. Defaults to [1,1,1], which means no scaling in effect.
+        moderator_df (_type_, optional): Contains the morphological moderator variables that are used for the adjuster. Defaults to None.
+        iter (bool, optional): If the adjuster should be applied in an iterative manner during the iterative applications of the focal operation (iter = True) or afterwards once (iter = False). Defaults to True.
+        baseline (bool, optional): Argument onto whether to apply a scaling based on the baseline and traffic coefficients. Defaults to False.
+        meteolog (boolean): if True, the log of the meteorological values is taken apart from winddirection. Defaults to False.
+        stressor (str, optional): The stressor for which the predictions are made. Defaults to "NO2".
+    
+    Returns:
+        dataframe: A dataframe with the predictions for each hour and month.
+    """
+    Results_df = pd.DataFrame({"int_id": range(1,len(baselineNO2)+1), "baselineNO2": baselineNO2})
     if morphparams is not None:
         adjuster = provide_adjuster( morphparams = morphparams, GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
                             NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
                             neigh_height_diff = moderator_df["neigh_height_diff"])
     else:
         adjuster = None
+    preds,colnames = [], []
     for month in range(12):
-            weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= meteoparams, meteovalues = meteovalues_df.iloc[month].values)
-            if len(repeatsparams) > 1:
-                nr_repeats = repeatsparams[0] + (repeatsparams[1] * meteovalues_df.iloc[month, 2])
-            else: 
-                nr_repeats = int(repeatsparams[0])
-            for hour in range(24):
-                Pred =  compute_hourly_dispersion(raster = raster, TrafficNO2 = TrafficNO2perhour.iloc[:,hour], baselineNO2 = baselineNO2,
+        print("Computing Month: ", month + 1)
+        weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= meteoparams, meteovalues = meteovalues_df.iloc[month].values)
+        if len(repeatsparams) > 1:
+            nr_repeats = repeatsparams[0] + (repeatsparams[1] * meteovalues_df.iloc[month, 2])
+        else: 
+            nr_repeats = int(repeatsparams[0])        
+        for hour in range(24):
+            Pred =  compute_hourly_dispersion(raster = raster, TrafficNO2 = TrafficNO2perhour.iloc[:,hour], baselineNO2 = baselineNO2,
                                                   onroadindices = onroadindices, weightmatrix = weightmatrix, nr_repeats = nr_repeats,
-                                                  adjuster=adjuster, iter = iter, baseline = baseline, baseline_coeff = scalingcoeffs[2], 
-                                                traffemissioncoeff_onroad = scalingcoeffs[0],traffemissioncoeff_offroad = scalingcoeffs[1])
-                Results_df.loc[:, f"predNO2_m{month}_h{hour}"] = Pred
+                                                  adjuster=adjuster, iter = iter, baseline = baseline, baseline_coeff = scalingparams[0], 
+                                                traffemissioncoeff_onroad = scalingparams[1],traffemissioncoeff_offroad = scalingparams[2])
+
+            preds.append(list(Pred))
+            colnames.append(f"pred{stressor}_m{month}_h{hour}")
+
+    # creating a dataframe with the predictions and the columnnames
+    preds = list(map(list, zip(*preds)))
+    Results_df = pd.concat([Results_df, pd.DataFrame(preds, columns=colnames)], axis=1)
     return Results_df
 
-
-def saveNO2predictions(raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, 
-                       repeatsparams, meteovalues_df, morphparams = None, scalingcoeffs = [1,1,1], 
-                       moderator_df = None, iter = True, baseline = False, meteolog = False, suffix = ""):
+def saveMonthlyHourlyredictions(raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, 
+                       repeatsparams, meteovalues_df, morphparams = None, scalingparams = [1,1,1], 
+                       moderator_df = None, iter = True, baseline = False, 
+                       meteolog = False, suffix = "", stressor = "NO2"):
     """This function saves the NO2 predictions per hour and month to a csv file and print the summary statistics of the predictions. It will select the correct dispersion model 
     based on the input parameters.
     
@@ -134,27 +166,71 @@ def saveNO2predictions(raster, TrafficNO2perhour, baselineNO2, onroadindices, ma
         repeatsparams (list(float)): A list of calibrated parameters that are used for the number of repeats of the focal operation. This could be a single value or a value that is dependent on the meteorological values.
         meteovalues_df (dataframe(float)): A dataframe of all meteorological values for each month (months are rows). The dataframe should have the columns "Temperature", "Rain", "Windspeed", "Winddirection" in that order.
         morphparams (list(float), optional): A list of calibrated parameters that are used for the morphological adjuster. Defaults to None.
-        scalingcoeffs (list(float), optional): A calibrated parameter list for scaling the traffic values and baseline NO2. Defaults to [1,1,1], which means no scaling in effect.
+        scalingparams (list(float), optional): A calibrated parameter list for scaling the traffic values and baseline NO2. Defaults to [1,1,1], which means no scaling in effect.
         moderator_df (_type_, optional): Contains the morphological moderator variables that are used for the adjuster. Defaults to None.
         iter (bool, optional): If the adjuster should be applied in an iterative manner during the iterative applications of the focal operation (iter = True) or afterwards once (iter = False). Defaults to True.
         baseline (bool, optional): Argument onto whether to apply a scaling based on the baseline and traffic coefficients. Defaults to False.
         meteolog (boolean): if True, the log of the meteorological values is taken apart from winddirection. Defaults to False.
         suffix (str, optional): A string extension to the filename (e.g. cellsize, matrixsize, any specification). Defaults to "".
+        stressor (str, optional): The stressor for which the predictions are made. Defaults to "NO2".
     """
-    Results_df = estimate_monthlyhourly_NO2(raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, 
-                       repeatsparams, meteovalues_df, morphparams, scalingcoeffs, 
+    Results_df = estimateMonthlyHourlyValues(raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, 
+                       repeatsparams, meteovalues_df, morphparams, scalingparams, 
                        moderator_df, iter, baseline, meteolog)
-    Results_df.to_csv(f"NO2predictions_{suffix}.csv", index = False)
+    Results_df.to_csv(f"{stressor}predictions_{suffix}.csv", index = False)
+    return Results_df
     
 
-def saveTraffScenarioNO2predictions(trafficfactors, raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, 
-                       repeatsparams, meteovalues_df, morphparams = None, scalingcoeffs = [1,1,1], 
-                       moderator_df = None, iter = True, baseline = False, meteolog = False, suffix = "", roadneighborindices = None):
+def makeScenarioPredictsblank(Scenarios, cellsubgroups = None):
+    ScenarioPredictions  = pd.DataFrame({"Scenarios": Scenarios, "Mean": np.nan, "Max": np.nan, "Min": np.nan})
+    if cellsubgroups is not None:
+        for celltype in cellsubgroups.columns[1:]:
+            ScenarioPredictions[f"{celltype}_Mean"] = np.nan
+            ScenarioPredictions[f"{celltype}_Max"] = np.nan
+            ScenarioPredictions[f"{celltype}_Min"] = np.nan
+    return ScenarioPredictions
+
+def calculateScenarioSummaryStats(Pred, scenario, columnnames, ScenarioPredictions, cellsubgroups = None):
+    """ This function calculates the summary statistics for the predictions of a scenario and adds them to the ScenarioPredictions dataframe.
+    It will also calculate the summary statistics for different cell subgroups if the cellsubgroups dataframe is provided.
+    
+    Args:
+        Pred (dataframe(float)): A dataframe with the predictions for each hour and month.
+        scenario (float): The scenario for which the predictions are made.
+        columnnames (list(str)): A list of the column names of the predictions.
+        ScenarioPredictions (dataframe(float)): A dataframe with the summary statistics for the different scenarios.
+        cellsubgroups (dataframe(int), optional): Defaults to None. A dataframe with the "int_id" and the different cell subgroups
+    
+    Returns:
+        dataframe: A dataframe with the summary statistics for the different scenarios.
+    """
+    index = ScenarioPredictions[ScenarioPredictions['Scenarios'] == scenario].index[0]
+    cellvals = Pred.loc[:, columnnames].values.flatten()
+    ScenarioPredictions.loc[index, "Mean"] =  np.mean(cellvals)
+    ScenarioPredictions.loc[index, "Max"] =  max(cellvals)
+    ScenarioPredictions.loc[index, "Min"] =  min(cellvals)
+    if cellsubgroups is not None:
+        Pred = Pred.merge(cellsubgroups, on="int_id", how="left")
+        for celltype in cellsubgroups.columns[1:]:
+            cellvals = Pred.loc[Pred[celltype] == 1, columnnames].values.flatten()
+            ScenarioPredictions.loc[index, f"{celltype}_Mean"] =  np.mean(cellvals)
+            ScenarioPredictions.loc[index, f"{celltype}_Max"] =  max(cellvals)
+            ScenarioPredictions.loc[index, f"{celltype}_Min"] =  min(cellvals)
+    return ScenarioPredictions
+
+
+def saveTrafficScenarioPredictions(trafficfactors, raster, TrafficNO2perhour, 
+                                   baselineNO2, onroadindices, 
+                                    matrixsize, meteoparams, repeatsparams, meteovalues_df, 
+                                    morphparams = None, scalingparams = [1,1,1], 
+                                    moderator_df = None, iter = True, baseline = False, 
+                                    meteolog = False, suffix = "", stressor = "NO2", cellsubgroups = None):
     """This function saves the NO2 predictions for a set of simple traffic scenarios to a csv file
     and print the summary statistics of the predictions. The trafficscenarios are simple adjustments of 
     the traffic and onroad NO2 by the specified factors. The trafficfactors parameters is that list of factors for the traffic scenarios.
-    The function will select the correct dispersion model based on the input parameters.
-
+    The function will select the correct dispersion model based on the input parameters. It moreover saves the summary
+    statistics of the predictions for different cell subgroups (e.g. ON_ROAD, ROAD_NEIGHBOR) in a csv file.
+    
     Args:
         trafficfactors (list(float)): A list of factors for which to test the traffic scenarios. The scenario will be the on-road traffic NO2 multiplied by the different factors.
         raster (xarray raster): the raster that is used for the dispersion model (xarray format (see package doc)) .
@@ -172,34 +248,29 @@ def saveTraffScenarioNO2predictions(trafficfactors, raster, TrafficNO2perhour, b
         baseline (bool, optional): Argument onto whether to apply a scaling based on the baseline and traffic coefficients. Defaults to False.
         meteolog (boolean): if True, the log of the meteorological values is taken apart from winddirection. Defaults to False.
         suffix (str, optional): A string extension to the filename (e.g. cellsize, matrixsize, any specification). Defaults to "".
-        roadneighborindices (_type_, optional): A list of indices of road neighboring cells for summary statistics. Defaults to None.
+        stressor (str, optional): The stressor for which the predictions are made. Defaults to "NO2".
+        cellsubgroups (dataframe(int), optional): Defaults to None. A dataframe with the "int_id" and the different cell subgroups
     """
-    
-    ScenarioMeans, ScenarioMax, OnRoadMeans, OnRoadMax = [], [], [], []
-    if roadneighborindices is not None:
-        RoadNeighborMeans, RoadNeighborMax = [], []
-    for trafficfactor in trafficfactors:
-        TrafficNO2perhour_scenario = TrafficNO2perhour * trafficfactor
-        Results_df = estimate_monthlyhourly_NO2(raster, TrafficNO2perhour_scenario, baselineNO2, onroadindices, matrixsize, meteoparams, 
-                       repeatsparams, meteovalues_df, morphparams, scalingcoeffs, 
-                       moderator_df, iter, baseline, meteolog)
-        Results_df.to_csv(f"NO2predictions_{suffix}_traffScenario_{trafficfactor}.csv", index = False)
-        ScenarioMeans.append(np.mean(Results_df.iloc[:,1:].mean(axis=0)))
-        ScenarioMax.append(np.max(Results_df.iloc[:,1:].max(axis=0)))
-        OnRoadMeans.append(np.mean(Results_df.iloc[onroadindices,1:].mean(axis=0)))
-        OnRoadMax.append(np.max(Results_df.iloc[onroadindices,1:].max(axis=0)))
-        if roadneighborindices is not None:
-            RoadNeighborMeans.append(np.mean(Results_df.iloc[roadneighborindices,1:].mean(axis=0)))
-            RoadNeighborMax.append(np.max(Results_df.iloc[roadneighborindices,1:].max(axis=0)))
-    
-    if roadneighborindices is not None:
-        pd.DataFrame({"Scenarios": trafficfactors, "ScenarioMeans": ScenarioMeans, 
-                      "ScenarioMax": ScenarioMax, "OnRoadMeans": OnRoadMeans, "OnRoadMax": OnRoadMax, 
-                      "RoadNeighborMeans": RoadNeighborMeans, "RoadNeighborMax": RoadNeighborMax}).to_csv(f"ScenarioNO2predictions_{suffix}.csv", index=False)
-    else:
-        pd.DataFrame({"Scenarios": trafficfactors, "ScenarioMeans": ScenarioMeans, "ScenarioMax": ScenarioMax}).to_csv(f"ScenarioNO2predictions_{suffix}.csv", index=False)
+    ScenarioPredictions = makeScenarioPredictsblank(Scenarios = trafficfactors, cellsubgroups = cellsubgroups)
+    columnnames = [f"pred{stressor }_m{month}_h{hour}" for month in range(12) for hour in range(24)]
+    for scenario in trafficfactors:
+        print("Computing Scenario: ", scenario)
+        trafficscenarios = TrafficNO2perhour * scenario
+        Pred = saveMonthlyHourlyredictions(raster = raster, TrafficNO2perhour = trafficscenarios, 
+                                        baselineNO2 = baselineNO2,
+                                        onroadindices = onroadindices, matrixsize=matrixsize, 
+                                        meteoparams=meteoparams, repeatsparams=repeatsparams, 
+                                        meteovalues_df=meteovalues_df,
+                                        morphparams = morphparams, scalingparams = scalingparams, 
+                                        moderator_df = moderator_df, iter = iter, baseline = baseline, 
+                                        meteolog = meteolog, suffix = suffix + f"_traffScenario_{scenario}", 
+                                        stressor = stressor)
+        ScenarioPredictions = calculateScenarioSummaryStats(Pred, scenario, columnnames, 
+                                      ScenarioPredictions, cellsubgroups)
+    ScenarioPredictions.to_csv(f"Scenario{stressor}predictions_{suffix}.csv", index=False)
+    return ScenarioPredictions
 
-    
+
 
 def PrintSaveSummaryStats(df, dfname, suffix = ""):
     """Print and save summary statistics of the dataframe"""
@@ -220,7 +291,7 @@ def PrintSaveSummaryStats(df, dfname, suffix = ""):
     print(descript)
 
 
-def SingleVarViolinplot(df,variable, ylabel = None, filesuffix = None):
+def SingleVarViolinplot(df,variable, ylabel = None, filesuffix = ""):
     if ylabel == None:
         ylabel = variable
     sns.set(style="whitegrid")
@@ -233,7 +304,7 @@ def SingleVarViolinplot(df,variable, ylabel = None, filesuffix = None):
     plt.close()
 
 
-def ViolinOverTimeColContinous(xvar, yvar, showplots, df, ylabel = None, xlabel = None, suffix = None):
+def ViolinOverTimeColContinous(xvar, yvar, showplots, df, ylabel = None, xlabel = None, suffix = ""):
     if ylabel is None:
         ylabel = yvar
     if xlabel is None:
@@ -281,7 +352,7 @@ def MapSpatialDataFixedColorMapSetofVariables(variables, rasterdf, jointlabel, s
         plt.savefig(f'{variable}_map_{suffix}.png', dpi=400)
         plt.close()
 
-def ParallelMapSpatialDataFixedColorMap(variable, title, rasterdf, jointlabel, vmin, vmax, distance_meters, cmap= "viridis" , suffix = None):
+def ParallelMapSpatialDataFixedColorMap(variable, title, rasterdf, jointlabel, vmin, vmax, distance_meters, cmap= "viridis" , suffix = ""):
     print(rasterdf[variable].describe())
     ax= rasterdf.plot(variable, cmap= cmap, antialiased=False, linewidth = 0.00001, legend = True, vmin = vmin, vmax=vmax)
     ax.set_xlim(rasterdf.total_bounds[0], rasterdf.total_bounds[2])
@@ -293,7 +364,7 @@ def ParallelMapSpatialDataFixedColorMap(variable, title, rasterdf, jointlabel, v
     plt.savefig(f'{variable}_map_{suffix}.png', dpi=400)
     plt.close()
 
-def ParallelMapSpatialData_StreetsFixedColorMap(variable, title, rasterdf, streets, jointlabel, vmin, vmax, distance_meters, cmap= "viridis" , suffix = None):
+def ParallelMapSpatialData_StreetsFixedColorMap(variable, title, rasterdf, streets, jointlabel, vmin, vmax, distance_meters, cmap= "viridis" , suffix = ""):
     print(rasterdf[variable].describe())
     ax= rasterdf.plot(variable, cmap= cmap, antialiased=False, linewidth = 0.00001, legend = True, vmin = vmin, vmax=vmax)
     ax.set_xlim(rasterdf.total_bounds[0], rasterdf.total_bounds[2])
@@ -349,7 +420,7 @@ def SplitYAxisLineGraph(df, xvar, yvar1, yvar2, yvarlabel1, yvarlabel2,  ylimmin
 
 def SplitYAxis2plusLineGraph(df, xvar, yvar1_list, yvar2_list, yvarlabel1_list, yvarlabel2_list, 
                              ylimmin1, ylinmax1, ylimmin2, ylinmax2, xlabel, ylabel1, 
-                             ylabel2, showplots=False, suffix=None):
+                             ylabel2, showplots=False, suffix=""):
     f, (ax, ax2) = plt.subplots(2, 1, sharex=True)
     ax2.axhline(y=0, linestyle='--', color='gray', linewidth=0.6)
     ax.axhline(y=0, linestyle='--', color='gray', linewidth=0.6)
@@ -379,7 +450,7 @@ def SplitYAxis2plusLineGraph(df, xvar, yvar1_list, yvar2_list, yvarlabel1_list, 
     ax.tick_params(labeltop=False)  # don't put tick labels at the top
     ax2.xaxis.tick_bottom()
 
-    plt.savefig(f'{"_".join(yvar1_list)}_and_{"_".join(yvar2_list)}_by_{xvar}{suffix}.png', dpi=400)
+    plt.savefig(f'{xvar}_{"_".join(yvar1_list)}_and_{"_".join(yvar2_list)}_by_{xvar}{suffix}.png', dpi=400)
 
     if showplots:
         plt.show()
@@ -432,3 +503,52 @@ def safeadjusterHistogram(adjuster, suffix = ""):
     plt.title("Histogram of Adjuster Values")
     plt.savefig(f'AdjusterHistogram_{suffix}.png', dpi = 400)
     plt.close()
+    
+def meltPredictions(Predictions, stressor, cellsize):
+    columnnames = [f"pred{stressor}_m{month}_h{hour}" for month in range(12) for hour in range(24)]
+    Predictions_melted = pd.melt(Predictions, id_vars= ["int_id",  "baselineNO2"], value_vars=columnnames)
+    Predictions_melted[["month", "hour"]] = Predictions_melted["variable"].str.extract(r'predNO2_m(\d+)_h(\d+)')
+    Predictions_melted["NO2"] = Predictions_melted["value"]
+    Predictions_melted["month"] = Predictions_melted["month"].astype(int)
+    Predictions_melted["month"] += 1
+    Predictions_melted["hour"] = Predictions_melted["hour"].astype(int)
+    print(Predictions_melted.head())
+    Predictions_melted.to_csv(f"{stressor}Predictions_melted_{cellsize}.csv", index=False)
+    return Predictions_melted
+    
+def saveScenarioDescripts(Scenarios, cellsize, stressor, cellsubgroups = None):
+    """This function saves summary statistics for the predictions for the different traffic 
+    scenarios also per cell subgroup (e.g. ON_ROAD, ROAD_NEIGHBOR) in a csv file.
+
+    Args:
+        Scenarios (list(float)): A list of traffic scenario factor (status quo traffic times that factor)
+        cellsize (str): The cell size of the grid
+        stressor (str): The stressor for which the predictions are made (e.g. NO2)
+        cellsubgroups (dataframe(int)): Optional. Defaults to None. A dataframe with the "int_id" and the different cell subgroups
+
+    Returns:
+        ScenarioPredictions (pd.DataFrame): A dataframe with the summary statistics for the predictions
+    """
+    ScenarioPredictions  = pd.DataFrame({"Scenarios": Scenarios, "Mean": np.nan, "Max": np.nan, "Min": np.nan})
+    if cellsubgroups is not None:
+        for celltype in cellsubgroups.columns[1:]:
+            ScenarioPredictions[f"{celltype}_Mean"] = np.nan
+            ScenarioPredictions[f"{celltype}_Max"] = np.nan
+            ScenarioPredictions[f"{celltype}_Min"] = np.nan
+    columnnames = [f"pred{stressor }_m{month}_h{hour}" for month in range(12) for hour in range(24)]
+    for index, scenario in enumerate(Scenarios):   
+        print("Loading Scenario: ", scenario)
+        Pred = pd.read_csv(f"{stressor}predictions_{cellsize}_traffScenario_{scenario}.csv")
+        Pred = Pred.merge(cellsubgroups, on="int_id", how="left")
+        cellvals = Pred.loc[:, columnnames].values.flatten()
+        ScenarioPredictions.loc[index, "Mean"] =  np.mean(cellvals)
+        ScenarioPredictions.loc[index, "Max"] =  max(cellvals)
+        ScenarioPredictions.loc[index, "Min"] =  min(cellvals)
+        if cellsubgroups is not None:
+            for celltype in cellsubgroups.columns[1:]:
+                cellvals = Pred.loc[Pred[celltype] == 1, columnnames].values.flatten()
+                ScenarioPredictions.loc[index, f"{celltype}_Mean"] =  np.mean(cellvals)
+                ScenarioPredictions.loc[index, f"{celltype}_Max"] =  max(cellvals)
+                ScenarioPredictions.loc[index, f"{celltype}_Min"] =  min(cellvals)
+    ScenarioPredictions.to_csv(f"Scenario{stressor}predictions_{cellsize}.csv", index=False)
+    return ScenarioPredictions

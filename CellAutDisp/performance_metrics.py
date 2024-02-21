@@ -4,7 +4,6 @@ import numpy as np
 from math import sqrt
 import pandas as pd
 
-
 def compute_R(pred, obs):
     """This function return the Pearson correlation coefficient between two arrays.
 
@@ -136,7 +135,6 @@ def print_RMSE(MSE, prefix = ""):
         prefix (str, optional): A Prefix that will be added in front of the print. Defaults to "".
     """
     print(f"{prefix} RMSE: {sqrt(MSE)}")
-    
     
 def printPerformancePerMonthHour(MSE, R, MAE, ME, prefix = ""):
     for month in range(12):

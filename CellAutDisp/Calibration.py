@@ -7,7 +7,7 @@ from math import sqrt
 from provide_adjuster import provide_adjuster
 from geneticalgorithm2 import geneticalgorithm2  as ga
 from datetime import datetime
-from CA_dispersion import compute_hourly_dispersion
+from cellautom_dispersion import compute_hourly_dispersion
 import json
 
 def compute_mean_monthly_dispersion(raster, baselineNO2, TrafficNO2perhour, onroadindices, 
@@ -48,7 +48,7 @@ def compute_mean_monthly_dispersion(raster, baselineNO2, TrafficNO2perhour, onro
 
 def compute_MeteoMatrixsizeRepeats(raster, baselineNO2, TrafficNO2perhour, onroadindices, 
                                    params, matrixsize, meteovalues, observations,
-                                   meteolog = False, metric = "R"):
+                                   meteolog = False, metric = "R2"):
     weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= params[1:], meteovalues = meteovalues)
     Pred = compute_mean_monthly_dispersion(raster = raster, baselineNO2 = baselineNO2, TrafficNO2perhour= TrafficNO2perhour,
                                            onroadindices = onroadindices,weightmatrix = weightmatrix,
@@ -58,7 +58,7 @@ def compute_MeteoMatrixsizeRepeats(raster, baselineNO2, TrafficNO2perhour, onroa
 
 def compute_MorphAdjust(raster, baselineNO2, TrafficNO2perhour, onroadindices, 
                 meteovalues, observations, meteoparams, adjuster, matrixsize, 
-                nr_repeats, meteolog = False, iter = False, metric = "R"):
+                nr_repeats, meteolog = False, iter = False, metric = "R2"):
     weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= meteoparams, meteovalues = meteovalues)
     Pred = compute_mean_monthly_dispersion(raster = raster, baselineNO2 = baselineNO2, TrafficNO2perhour= TrafficNO2perhour,
                                            onroadindices = onroadindices, weightmatrix = weightmatrix, nr_repeats=nr_repeats, adjuster=adjuster, iter = iter)
@@ -66,16 +66,26 @@ def compute_MorphAdjust(raster, baselineNO2, TrafficNO2perhour, onroadindices,
 
 def compute_MeteoNrRepeats(params, raster, baselineNO2, TrafficNO2perhour, onroadindices, 
                 meteovalues, observations, meteoparams, adjuster, matrixsize
-                , meteolog = False, iter = False, metric = "R"):
+                , meteolog = False, iter = False, metric = "R2"):
     weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= meteoparams, meteovalues = meteovalues)
     nr_repeats = params[0] + (params[1] * meteovalues[2])
     Pred = compute_mean_monthly_dispersion(raster = raster, baselineNO2 = baselineNO2, TrafficNO2perhour= TrafficNO2perhour,
                                            onroadindices = onroadindices, weightmatrix = weightmatrix, nr_repeats=nr_repeats, adjuster=adjuster, iter = iter)
     return performance_metrics.compute_Metric(pred=Pred, obs = observations, metric= metric)
 
+
+def compute_AddTempDiff(raster, baselineNO2, TrafficNO2perhour, onroadindices, nr_repeats,
+                        params, matrixsize, meteovalues, observations, meteoparams, adjuster, iter, log_indices,
+                        meteolog = False, metric = "R2"):
+    weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= meteoparams + list(params), meteovalues = meteovalues, flex= True, log_indices= log_indices)
+    Pred = compute_mean_monthly_dispersion(raster = raster, baselineNO2 = baselineNO2, TrafficNO2perhour= TrafficNO2perhour,
+                                           onroadindices = onroadindices, weightmatrix = weightmatrix, nr_repeats=nr_repeats, adjuster=adjuster, iter = iter)    
+    return performance_metrics.compute_Metric(pred=Pred, obs = observations, metric= metric)
+
+
 def compute_Scaling(params, raster, baselineNO2, TrafficNO2perhour, onroadindices, 
                 meteovalues, observations, meteoparams, adjuster, matrixsize, repeatsparams,
-                meteolog = False, iter = False, metric = "R"):
+                meteolog = False, iter = False, metric = "R2"):
     weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= meteoparams, meteovalues = meteovalues)
     nr_repeats = repeatsparams[0] + (repeatsparams[1] * meteovalues[2])
     Pred = compute_mean_monthly_dispersion(raster = raster, baselineNO2 = baselineNO2, TrafficNO2perhour= TrafficNO2perhour,
@@ -83,6 +93,18 @@ def compute_Scaling(params, raster, baselineNO2, TrafficNO2perhour, onroadindice
                                            nr_repeats=nr_repeats, adjuster=adjuster, iter = iter,  baseline = True,
                                            baseline_coeff = params[0], traffemissioncoeff_onroad= params[1],  
                                            traffemissioncoeff_offroad= params[2])
+    return performance_metrics.compute_Metric(pred=Pred, obs = observations, metric= metric)
+
+def compute_Allparams(params, raster, baselineNO2, TrafficNO2perhour, onroadindices, 
+                meteovalues, observations, adjuster, matrixsize, 
+                meteolog = False, iter = False, metric = "R2"):
+    weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= params[0:9], meteovalues = meteovalues)
+    nr_repeats = params[17] + (params[18] * meteovalues[2])
+    Pred = compute_mean_monthly_dispersion(raster = raster, baselineNO2 = baselineNO2, TrafficNO2perhour= TrafficNO2perhour,
+                                           onroadindices = onroadindices, weightmatrix = weightmatrix, 
+                                           nr_repeats=nr_repeats, adjuster=adjuster, iter = iter,  baseline = True,
+                                           baseline_coeff = params[19], traffemissioncoeff_onroad= params[20],  
+                                           traffemissioncoeff_offroad= params[21])
     return performance_metrics.compute_Metric(pred=Pred, obs = observations, metric= metric)
 
 
@@ -202,6 +224,7 @@ def computemonthlyperformance(raster, TrafficNO2perhour, baselineNO2, onroadindi
     return np.mean(rs)**2, sqrt(np.mean(MSEs)), np.mean(MAEs), np.mean(MEs)
 
 
+
 def makeR2ErrorRMSEfunctions(computefunction, nr_cpus, data_presets, observations, 
                              meteovalues_df, uniqueparams, adjustercalib = False, 
                              moderator_df = None):
@@ -226,38 +249,70 @@ def makeR2ErrorRMSEfunctions(computefunction, nr_cpus, data_presets, observation
         function, function, function: fitnessfunctionR, fitnessfunctionErrors, fitnessfunctionRMSE
     """
     if adjustercalib:
-        def fitnessfunctionR(params):
-            adjuster = provide_adjuster( morphparams = params, GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
-                                        NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
-                                        neigh_height_diff = moderator_df["neigh_height_diff"])
-            uniqueparams.update({"adjuster": adjuster})
-            r = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets, meteovalues = meteovalues_df.iloc[month].values, 
-                                                                    observations = observations.iloc[:,month],
-                                                                    **uniqueparams, metric = "R2"  ) for month in range(12))
-            performance_metrics.print_R2(np.mean(r))
-            return 1-np.mean(r)
-        def fitnessfunctionErrors(params):
-            adjuster = provide_adjuster( morphparams = params, GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
-                                        NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
-                                        neigh_height_diff = moderator_df["neigh_height_diff"])
-            uniqueparams.update({"adjuster": adjuster})
-            results = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets, meteovalues = meteovalues_df.iloc[month].values, 
-                                                                    observations = observations.iloc[:,month],
-                                                                    **uniqueparams, metric = "Errors") for month in range(12))
-            MSE, MAE, ME = zip(*results)
-            performance_metrics.print_Errors(np.mean(MSE), np.mean(MAE), np.mean(ME), prefix = "")
-            return sqrt(np.mean(MSE)), np.mean(MAE), np.mean(ME)
-        def fitnessfunctionRMSE(params):
-            adjuster = provide_adjuster( morphparams = params, GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
-                                        NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
-                                        neigh_height_diff = moderator_df["neigh_height_diff"])
-            uniqueparams.update({"adjuster": adjuster})
-            MSE = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets, meteovalues = meteovalues_df.iloc[month].values, 
-                                                                    observations = observations.iloc[:,month],
-                                                                    **uniqueparams, metric = "RMSE") for month in range(12))
-            performance_metrics.print_RMSE(np.mean(MSE), prefix = "")
-            return sqrt(np.mean(MSE))
-        return fitnessfunctionR, fitnessfunctionErrors, fitnessfunctionRMSE
+        if "meteoparams" in uniqueparams.keys():
+            def fitnessfunctionR(params):
+                adjuster = provide_adjuster( morphparams = params, GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
+                                            NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
+                                            neigh_height_diff = moderator_df["neigh_height_diff"])
+                uniqueparams.update({"adjuster": adjuster})
+                r = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets, meteovalues = meteovalues_df.iloc[month].values, 
+                                                                        observations = observations.iloc[:,month],
+                                                                        **uniqueparams, metric = "R2"  ) for month in range(12))
+                performance_metrics.print_R2(np.mean(r))
+                return 1-np.mean(r)
+            def fitnessfunctionErrors(params):
+                adjuster = provide_adjuster( morphparams = params, GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
+                                            NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
+                                            neigh_height_diff = moderator_df["neigh_height_diff"])
+                uniqueparams.update({"adjuster": adjuster})
+                results = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets, meteovalues = meteovalues_df.iloc[month].values, 
+                                                                        observations = observations.iloc[:,month],
+                                                                        **uniqueparams, metric = "Errors") for month in range(12))
+                MSE, MAE, ME = zip(*results)
+                performance_metrics.print_Errors(np.mean(MSE), np.mean(MAE), np.mean(ME), prefix = "")
+                return sqrt(np.mean(MSE)), np.mean(MAE), np.mean(ME)
+            def fitnessfunctionRMSE(params):
+                adjuster = provide_adjuster( morphparams = params, GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
+                                            NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
+                                            neigh_height_diff = moderator_df["neigh_height_diff"])
+                uniqueparams.update({"adjuster": adjuster})
+                MSE = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets, meteovalues = meteovalues_df.iloc[month].values, 
+                                                                        observations = observations.iloc[:,month],
+                                                                        **uniqueparams, metric = "RMSE") for month in range(12))
+                performance_metrics.print_RMSE(np.mean(MSE), prefix = "")
+                return sqrt(np.mean(MSE))
+        else:
+            def fitnessfunctionR(params):
+                adjuster = provide_adjuster( morphparams = params[9:17], GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
+                                            NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
+                                            neigh_height_diff = moderator_df["neigh_height_diff"])
+                uniqueparams.update({"adjuster": adjuster})
+                r = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets, params = params, meteovalues = meteovalues_df.iloc[month].values, 
+                                                                        observations = observations.iloc[:,month],
+                                                                        **uniqueparams, metric = "R2"  ) for month in range(12))
+                performance_metrics.print_R2(np.mean(r))
+                return 1-np.mean(r)
+            def fitnessfunctionErrors(params):
+                adjuster = provide_adjuster( morphparams = params[9:17], GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
+                                            NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
+                                            neigh_height_diff = moderator_df["neigh_height_diff"])
+                uniqueparams.update({"adjuster": adjuster})
+                results = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets, params = params, meteovalues = meteovalues_df.iloc[month].values, 
+                                                                        observations = observations.iloc[:,month],
+                                                                        **uniqueparams, metric = "Errors") for month in range(12))
+                MSE, MAE, ME = zip(*results)
+                performance_metrics.print_Errors(np.mean(MSE), np.mean(MAE), np.mean(ME), prefix = "")
+                return sqrt(np.mean(MSE)), np.mean(MAE), np.mean(ME)
+            def fitnessfunctionRMSE(params):
+                adjuster = provide_adjuster( morphparams = params[9:17], GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
+                                            NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
+                                            neigh_height_diff = moderator_df["neigh_height_diff"])
+                uniqueparams.update({"adjuster": adjuster})
+                MSE = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets,params = params, meteovalues = meteovalues_df.iloc[month].values, 
+                                                                        observations = observations.iloc[:,month],
+                                                                        **uniqueparams, metric = "RMSE") for month in range(12))
+                performance_metrics.print_RMSE(np.mean(MSE), prefix = "")
+                return sqrt(np.mean(MSE))
     else:
         def fitnessfunctionR(params):
             r = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets, params = params,  meteovalues = meteovalues_df.iloc[month].values, 
@@ -278,7 +333,7 @@ def makeR2ErrorRMSEfunctions(computefunction, nr_cpus, data_presets, observation
                                                                     **uniqueparams, metric = "RMSE") for month in range(12))
             performance_metrics.print_RMSE(np.mean(MSE), prefix = "")
             return sqrt(np.mean(MSE))
-        return fitnessfunctionR, fitnessfunctionErrors, fitnessfunctionRMSE
+    return fitnessfunctionR, fitnessfunctionErrors, fitnessfunctionRMSE
 
 
 
@@ -371,6 +426,16 @@ def makeFitnessfunction(calibtype, nr_cpus, matrixsize, raster, baselineNO2,
                                                                                                 nr_cpus = nr_cpus, data_presets = data_presets, 
                                                                                                 observations = observations, meteovalues_df = meteovalues_df,
                                                                                                 uniqueparams  = uniqueparams)
+    elif calibtype == "addtempdiff":
+        if "meteolog" not in uniqueparams.keys():
+            raise ValueError("uniqueparams must contain meteolog") 
+        if "meteoparams" not in uniqueparams.keys():
+            raise ValueError("uniqueparams must contain meteoparams")
+        uniqueparams.update({"log_indices": [0,1]})
+        fitnessfunctionR, fitnessfunctionErrors, fitnessfunctionRMSE = makeR2ErrorRMSEfunctions(computefunction = compute_AddTempDiff, 
+                                                                                                nr_cpus = nr_cpus, data_presets = data_presets, 
+                                                                                                observations = observations, meteovalues_df = meteovalues_df,
+                                                                                                uniqueparams  = uniqueparams)
     elif calibtype == "scaling":
         if "meteoparams" not in uniqueparams.keys():
             raise ValueError("uniqueparams must contain meteoparams")
@@ -386,6 +451,15 @@ def makeFitnessfunction(calibtype, nr_cpus, matrixsize, raster, baselineNO2,
                                                                                                 nr_cpus = nr_cpus, data_presets = data_presets, 
                                                                                                 observations = observations, meteovalues_df = meteovalues_df,
                                                                                                 uniqueparams  = uniqueparams)
+    elif calibtype == "allparams":
+        if "iter" not in uniqueparams.keys():
+            raise ValueError("uniqueparams must contain iter")
+        if "meteolog" not in uniqueparams.keys():
+            raise ValueError("uniqueparams must contain meteolog")
+        fitnessfunctionR, fitnessfunctionErrors, fitnessfunctionRMSE = makeR2ErrorRMSEfunctions(computefunction = compute_Allparams, 
+                                                                                                nr_cpus = nr_cpus, data_presets = data_presets, 
+                                                                                                observations = observations, meteovalues_df = meteovalues_df,
+                                                                                                uniqueparams  = uniqueparams, adjustercalib=True, moderator_df=moderator_df)
 
     if metric == "R2":
         return fitnessfunctionR, fitnessfunctionErrors
@@ -499,6 +573,49 @@ def PolishSaveGAresults(GAalgorithm, param_settings, fitnessfunction, otherperfo
     lastGenresults.to_csv(f"GAlast_generation_{suffix}.csv", index=False)
 
 
+def generateparambounds(calibtype):
+    if calibtype == "meteomatrixsizerepeats":
+        params_names = ["nr_repeats","BaseW_intercept","temp_coeff",  "rain_coeff", "windsp_coeff",
+                    "dispar_intercept","windsp_disp_coeff", "dist_coeff", "align_coeff", "inertia"]
+        param_settings = pd.DataFrame(params_names).rename(columns={0: "params_names"})
+        param_settings["lower"] = [2, 0, -1, -1, -1, 0, 0, 0, 0, 0]
+        param_settings["upper"] = [36, 1,  2,  2,  2, 3, 2, 2, 2, 9]
+    elif calibtype == "morph":
+        params_names = ["Mod_Intercept", "Green_mod", "OpenSp_mod", "Tree_mod", "BuildH_mod", 
+                        "NeighBuildH_mod", "max_adjust", "min_adjust"]
+        param_settings = pd.DataFrame(params_names).rename(columns={0: "params_names"})
+        param_settings["lower"] = [-2, -1, -5, -1, -1, -1,3, -1]
+        param_settings["upper"] = [2,  1,  2,  1,  1,  1,20,0]
+    elif calibtype == "meteonrrepeat":
+        params_names = ["dist_int", "wind_sp_dist_coeff"]
+        param_settings = pd.DataFrame(params_names).rename(columns={0: "params_names"})
+        param_settings["lower"] = [1, 0]
+        param_settings["upper"] = [12, 1]
+    elif calibtype == "addtempdiff":
+        params_names = ["tempdiff_coeff"]
+        param_settings = pd.DataFrame(params_names).rename(columns={0: "params_names"})
+        param_settings["lower"] = [-1]
+        param_settings["upper"] = [2]
+    elif calibtype == "scaling":
+        params_names = ["baseline_coeff", "traffemissionmod_onroad","traffemissionmod_offroad"]
+        param_settings = pd.DataFrame(params_names).rename(columns={0: "params_names"})
+        param_settings["lower"] = [0.1, 0.1, 0.1]
+        param_settings["upper"] = [2, 2, 2]
+    elif calibtype == "allparams":
+        params_names = ["BaseW_intercept","temp_coeff",  "rain_coeff", "windsp_coeff",
+                    "dispar_intercept","windsp_disp_coeff", "dist_coeff", "align_coeff", "inertia", 
+                    "Mod_Intercept", "Green_mod", "OpenSp_mod", "Tree_mod", "BuildH_mod", 
+                        "NeighBuildH_mod", "max_adjust", "min_adjust", "dist_int", "wind_sp_dist_coeff",
+                        "baseline_coeff", "traffemissionmod_onroad","traffemissionmod_offroad"]
+        param_settings = pd.DataFrame(params_names).rename(columns={0: "params_names"})
+        param_settings["lower"] = [0, -1, -1, -1, 0, 0, 0, 0, 0, 0, -1, -5, -1, -1, -1,3, -1, 0, 0, 0.1, 0.1, 0.1]
+        param_settings["upper"] = [1,  2,  2,  2, 3, 2, 2, 2, 9, 2,  1,  2,  1,  1,  1,20,0, 12, 1, 2, 2, 2]
+    else:
+        raise ValueError("calibtype not recognised")
+    print(param_settings)
+    return param_settings
+
+
 def addnewoptimalparams(optimalparamdict, calibtype, newoptimalparams, suffix):
     """This function adds the optimal parameters of the genetic algorithm to the optimalparamdict.
     
@@ -517,8 +634,15 @@ def addnewoptimalparams(optimalparamdict, calibtype, newoptimalparams, suffix):
         optimalparamdict["morphparams"] = newoptimalparams
     elif calibtype == "meteonrrepeat":
         optimalparamdict["repeatsparams"] = newoptimalparams
+    elif calibtype == "tempdiff":
+        optimalparamdict["meteoparams"] = optimalparamdict["meteoparams"] + newoptimalparams
     elif calibtype == "scaling":
         optimalparamdict["scalingparams"] = newoptimalparams
+    elif calibtype == "allparams":
+        optimalparamdict["meteoparams"] = newoptimalparams[0:9]
+        optimalparamdict["morphparams"] = newoptimalparams[9:17]
+        optimalparamdict["repeatsparams"] = newoptimalparams[17:19]
+        optimalparamdict["scalingparams"] = newoptimalparams[19:]
     with open(f'optimalparams_{suffix}.json', 'w') as f:
         json.dump(optimalparamdict, f)
     print("optimal parameters: ", optimalparamdict)

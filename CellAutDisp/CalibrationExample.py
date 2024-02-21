@@ -1,4 +1,4 @@
-import Calibration as cal
+import calibration as cal
 import os
 import pandas as pd
 import xarray as xr
@@ -12,15 +12,20 @@ dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
 os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
 
 ## Set the parameters
-cellsize = "25m"
+cellsize = "50m"
+print(cellsize)
 nr_cpus = 15
-suffix = "TrV_TrI_noTrA2"
-calibtype = "produceMonthlyHourlyPerformance"
+suffix = "TrV_TrI_noTrA"
+calibtype = "produceMonthlyHourlyPerformance" # One of: meteomatrixsizerepeats, morph, meteonrrepeat, scaling, allparams
 popsize, max_iter_noimprov, seed = 20, 5, 42
 calibdata = "Palmes"
-GA = False
-meteolog = True
+GA = True
+if cellsize == "50m":
+    meteolog = False
+else:
+    meteolog = True
 iter = False
+print_test = True
 
 
 # Read raster data and DataFrames
@@ -60,14 +65,11 @@ RIVMhourly = ["MeanNO2_0_1", "MeanNO2_1_2", "MeanNO2_2_3", "MeanNO2_3_4",
 data_presets_RIVM["observations"] = Eval_df[[f"{rivm}_month_{month}"  for month in range(1, 13) for rivm in RIVMhourly]]
 
 if calibtype == "meteomatrixsizerepeats":
-    params_names = ["nr_repeats","BaseW_intercept","temp_coeff",  "rain_coeff", "windsp_coeff",
-                    "dispar_intercept","windsp_disp_coeff", "dist_coeff", "align_coeff", "inertia"]
-    param_settings = pd.DataFrame(params_names).rename(columns={0: "params_names"})
-    param_settings["lower"] = [2, 0, -1, -1, -1, 0, 0, 0, 0, 0]
-    param_settings["upper"] = [36, 1,  2,  2,  2, 3, 2, 2, 2, 9]
+    param_settings = cal.generateparambounds(calibtype)
     objectivefunction = "R2"
     uniqueparams = {"meteolog": meteolog}
     matrixsize = 3
+    optimalparams = {}
     param_settings = cal.AddGAsettingstoDF(param_settings, cellsize, popsize, max_iter_noimprov, 
                                            seed, calibtype,calibdata, objectivefunction, uniqueparams, 
                                            matrixsize=matrixsize)
@@ -78,19 +80,16 @@ if calibtype == "meteomatrixsizerepeats":
     fitnessfunction, otherperformancefunction  = cal.makeFitnessfunction(calibtype = calibtype, nr_cpus = nr_cpus, 
                                             matrixsize = matrixsize, **data_presets, uniqueparams=uniqueparams,
                                             metric = objectivefunction)
-
-    testparams = [3.939325437, 0.992765078, 1.999647532,1.966431142,1.978174772,1.847262043,0.019670796,1.764727078,1.570765248,0.061130477]
-    fitnessfunction(testparams)
-    otherperformancefunction(testparams)
-    cal.computehourlymonthlyperformance(meteoparams = testparams[1:], repeatsparams=[testparams[0]], 
-                                        **data_presets_RIVM, matrixsize=matrixsize, **uniqueparams)
+    if print_test:
+        testparams = [2, 0.409800614, 0.011336538, 0.162193556, -0.096161606, 0.674606756, 0.830105679, 0.304843606,0.077548563,4.926544219]
+        # testparams = [3.939325437, 0.992765078, 1.999647532,1.966431142,1.978174772,1.847262043,0.019670796,1.764727078,1.570765248,0.061130477]
+        fitnessfunction(testparams)
+        otherperformancefunction(testparams)
+        cal.computehourlymonthlyperformance(meteoparams = testparams[1:], repeatsparams=[testparams[0]], 
+                                            **data_presets_RIVM, matrixsize=matrixsize, **uniqueparams)
 
 elif calibtype == "morph":
-    params_names = ["Mod_Intercept", "Green_mod", "OpenSp_mod", "Tree_mod", "BuildH_mod", 
-                    "NeighBuildH_mod", "max_adjust", "min_adjust"]
-    param_settings = pd.DataFrame(params_names).rename(columns={0: "params_names"})
-    param_settings["lower"] = [-2, -1, -5, -1, -1, -1,3, -1]
-    param_settings["upper"] = [2,  1,  2,  1,  1,  1,20,0]
+    param_settings = cal.generateparambounds(calibtype)
     objectivefunction = "R2"
     matrixsize = 3
     with open(f"optimalparams_{cellsize}_meteomatrixsizerepeatsMS{matrixsize}MeteoLog{meteolog}.json", "r") as read_file:
@@ -99,6 +98,8 @@ elif calibtype == "morph":
                     "nr_repeats": optimalparams["nr_repeats"], 
                     "iter": iter,
                     "meteoparams": optimalparams["meteoparams"]}
+    uniqueparamsRIVM = copy.deepcopy(uniqueparams)
+    
     param_settings = cal.AddGAsettingstoDF(param_settings, cellsize, popsize, max_iter_noimprov, 
                                            seed, calibtype,calibdata, objectivefunction, uniqueparams, 
                                            matrixsize=matrixsize)
@@ -108,25 +109,23 @@ elif calibtype == "morph":
     fitnessfunction, otherperformancefunction  = cal.makeFitnessfunction(calibtype = calibtype, nr_cpus = nr_cpus, 
                                             matrixsize = matrixsize, **data_presets, uniqueparams=uniqueparams, moderator_df = moderator_df,
                                             metric = objectivefunction)
-    # testparams = [0.81967684,  0.84154491, -0.27551129,  0.66047694,  0.66098455, -0.64587302,  17.43555439, -0.57848944]
-    testparams = [-0.654798184, 0.965573098, 1.818205907, 0.985129934, 0.164442684, -0.175486638, 3.414866835, -0.314854772]
+    if print_test:
+        testparams = [-0.654798184, 0.965573098, 1.818205907, 0.985129934, 0.164442684, -0.175486638, 3.414866835, -0.314854772]
+        # testparams = [-1.968502876,-0.663703622,-1.711615426,-0.052620046,0.551063005,-0.289443887,3.624477135,-0.002618109]
 
-    uniqueparamsRIVM = copy.deepcopy(uniqueparams)
-    del uniqueparamsRIVM["nr_repeats"]
-    uniqueparamsRIVM["repeatsparams"] = [optimalparams["nr_repeats"]]
-    cal.computehourlymonthlyperformance(morphparams = testparams,**data_presets_RIVM, matrixsize=matrixsize, 
-                                        **uniqueparamsRIVM, moderator_df = moderator_df)
+        fitnessfunction(testparams)
+        otherperformancefunction(testparams)
+        del uniqueparamsRIVM["nr_repeats"]
+        uniqueparamsRIVM["repeatsparams"] = [optimalparams["nr_repeats"]]
+        cal.computehourlymonthlyperformance(morphparams = testparams,**data_presets_RIVM, matrixsize=matrixsize, 
+                                            **uniqueparamsRIVM, moderator_df = moderator_df)
 
 elif calibtype == "meteonrrepeat":
-    params_names = ["dist_int", "wind_sp_dist_coeff"]
-    param_settings = pd.DataFrame(params_names).rename(columns={0: "params_names"})
-    param_settings["lower"] = [1, 0]
-    param_settings["upper"] = [12, 1]
+    param_settings = cal.generateparambounds(calibtype)
     objectivefunction = "R2"
     matrixsize = 3
     with open(f"optimalparams_{cellsize}_morphMS{matrixsize}iter{iter}MeteoLog{meteolog}.json", "r") as read_file:
         optimalparams = json.load(read_file)
-    del optimalparams["nr_repeats"]
     adjuster = provide_adjuster( morphparams = optimalparams["morphparams"], GreenCover = moderator_df["GreenCover"],
                                 openspace_fraction = moderator_df["openspace_fraction"], NrTrees = moderator_df["NrTrees"],
                                 building_height = moderator_df["building_height"], neigh_height_diff = moderator_df["neigh_height_diff"])
@@ -144,23 +143,56 @@ elif calibtype == "meteonrrepeat":
     fitnessfunction, otherperformancefunction  = cal.makeFitnessfunction(calibtype = calibtype, nr_cpus = nr_cpus, 
                                             matrixsize = matrixsize, **data_presets, uniqueparams=uniqueparams, moderator_df = moderator_df,
                                             metric = objectivefunction)
-    testparams = [1.734685659, 0.416988784]
-    fitnessfunction(testparams)
-    otherperformancefunction(testparams)
-    uniqueparamsRIVM = copy.deepcopy(uniqueparams)
-    del uniqueparamsRIVM["adjuster"]
-    uniqueparamsRIVM["repeatsparams"] = testparams
-    uniqueparamsRIVM["morphparams"] = optimalparams["morphparams"]
-    cal.computehourlymonthlyperformance(**data_presets_RIVM, matrixsize=matrixsize, 
-                                        **uniqueparamsRIVM, moderator_df = moderator_df)
+    if print_test:
+        # testparams = [1.734685659, 0.416988784]
+        testparams = [ 1.341329988, 0.138203627]
+        fitnessfunction(testparams)
+        otherperformancefunction(testparams)
+        uniqueparamsRIVM = copy.deepcopy(uniqueparams)
+        del uniqueparamsRIVM["adjuster"]
+        uniqueparamsRIVM["repeatsparams"] = testparams
+        uniqueparamsRIVM["morphparams"] = optimalparams["morphparams"]
+        cal.computehourlymonthlyperformance(**data_presets_RIVM, matrixsize=matrixsize, 
+                                            **uniqueparamsRIVM, moderator_df = moderator_df)
 
-
+elif calibtype == "addtempdiff":
+    param_settings = cal.generateparambounds(calibtype)
+    objectivefunction = "R2"
+    matrixsize = 3
+    with open(f"optimalparams_{cellsize}_morphMS{matrixsize}iter{iter}MeteoLog{meteolog}.json", "r") as read_file:
+        optimalparams = json.load(read_file)
+    adjuster = provide_adjuster( morphparams = optimalparams["morphparams"], GreenCover = moderator_df["GreenCover"],
+                                openspace_fraction = moderator_df["openspace_fraction"], NrTrees = moderator_df["NrTrees"],
+                                building_height = moderator_df["building_height"], neigh_height_diff = moderator_df["neigh_height_diff"])
+    data_presets["meteovalues_df"] = monthlyWeather2019[["Windspeed", "Winddirection","Temperature", "Rain", "TempDifference"]]
+    optimalparams["meteoparams"] = [optimalparams["meteoparams"][i] for i in [0,3,4,5,6,7,8,1,2]]
+    uniqueparams = {"meteolog": meteolog,  
+                    "adjuster": adjuster, 
+                    "iter": iter,
+                    "nr_repeats": optimalparams["nr_repeats"],
+                    "meteoparams": optimalparams["meteoparams"]}
+    param_settings = cal.AddGAsettingstoDF(param_settings, cellsize, popsize, max_iter_noimprov, 
+                                           seed, calibtype,calibdata, objectivefunction, uniqueparams, 
+                                           matrixsize=matrixsize)
+    print(param_settings)
+    run_nr = calibtype + "" + f"MS{matrixsize}iter{uniqueparams['iter']}MeteoLog{uniqueparams['meteolog']}"
+    print(run_nr)
+    fitnessfunction, otherperformancefunction  = cal.makeFitnessfunction(calibtype = calibtype, nr_cpus = nr_cpus, 
+                                            matrixsize = matrixsize, **data_presets, uniqueparams=uniqueparams, moderator_df = moderator_df,
+                                            metric = objectivefunction)
+    if print_test:
+        testparams = [0]
+        fitnessfunction(testparams)
+        otherperformancefunction(testparams)
+        # uniqueparamsRIVM = copy.deepcopy(uniqueparams)
+        # del uniqueparamsRIVM["adjuster"]
+        # uniqueparamsRIVM["morphparams"] = optimalparams["morphparams"]
+        # cal.computehourlymonthlyperformance(**data_presets_RIVM, matrixsize=matrixsize, 
+        #                                     **uniqueparamsRIVM, moderator_df = moderator_df)
+    
 elif calibtype == "scaling":
-    params_names = ["baseline_coeff", "traffemissionmod_onroad","traffemissionmod_offroad"]
-    param_settings = pd.DataFrame(params_names).rename(columns={0: "params_names"})
-    param_settings["lower"] = [0.1, 0.1, 0.1]
-    param_settings["upper"] = [2, 2, 2]
-    objectivefunction = "RMSE"
+    param_settings = cal.generateparambounds(calibtype)
+    objectivefunction = "R2"
     matrixsize = 3
     with open(f"optimalparams_{cellsize}_meteonrrepeatMS{matrixsize}iter{iter}MeteoLog{meteolog}.json", "r") as read_file:
         optimalparams = json.load(read_file)
@@ -185,33 +217,68 @@ elif calibtype == "scaling":
                                             matrixsize = matrixsize, **data_presets, uniqueparams=uniqueparams, moderator_df = moderator_df,
                                             metric = "R2")
     
-    optimalparams50m=[1.086297879, 0.228720948, 0.14710247]
-    fitnessfunction(optimalparams50m)
-    otherperformancefunction(optimalparams50m)
-    Errorsfunction(optimalparams50m)
-    uniqueparamsRIVM = copy.deepcopy(uniqueparams)
-    del uniqueparamsRIVM["adjuster"]
-    uniqueparamsRIVM["morphparams"] = optimalparams["morphparams"]
-    cal.computehourlymonthlyperformance(scalingparams=optimalparams50m, baseline= True, **data_presets_RIVM, matrixsize=matrixsize, 
-                                        **uniqueparamsRIVM, moderator_df = moderator_df)
+    if print_test: 
+        # optimalparams50m=[1.05831854, 0.24452759, 0.14830991]
+        optimalparams50m = [1.9983891,0.690864474,0.760965621]
+        fitnessfunction(optimalparams50m)
+        otherperformancefunction(optimalparams50m)
+        Errorsfunction(optimalparams50m)
+        uniqueparamsRIVM = copy.deepcopy(uniqueparams)
+        del uniqueparamsRIVM["adjuster"]
+        uniqueparamsRIVM["morphparams"] = optimalparams["morphparams"]
+        cal.computehourlymonthlyperformance(scalingparams=optimalparams50m, baseline= True, **data_presets_RIVM, matrixsize=matrixsize, 
+                                            **uniqueparamsRIVM, moderator_df = moderator_df)
+
+if calibtype == "allparams":
+    param_settings = cal.generateparambounds(calibtype)
+    objectivefunction = "R2"
+    matrixsize = 3
+    with open(f"optimalparams_{cellsize}_scalingMS{matrixsize}iter{iter}MeteoLog{meteolog}.json", "r") as read_file:
+        optimalparams = json.load(read_file)
+    optimalparamslist = optimalparams["meteoparams"]  + optimalparams["morphparams"] + optimalparams["repeatsparams"]+ optimalparams["scalingparams"]
+    param_settings["upper"] = [item+abs(item*0.25) for item in optimalparamslist]
+    param_settings["lower"] = [item-abs(item*0.25) for item in optimalparamslist]
+    
+    uniqueparams = {"meteolog": meteolog,  
+                    "iter": iter}
+    param_settings = cal.AddGAsettingstoDF(param_settings, cellsize, popsize, max_iter_noimprov, 
+                                           seed, calibtype,calibdata, objectivefunction, uniqueparams, 
+                                           matrixsize=matrixsize)
+    print(param_settings)
+    run_nr = calibtype + "" + f"MS{matrixsize}iter{uniqueparams['iter']}MeteoLog{uniqueparams['meteolog']}"
+    print(run_nr)
+    fitnessfunction, otherperformancefunction  = cal.makeFitnessfunction(calibtype = calibtype, nr_cpus = nr_cpus, 
+                                            matrixsize = matrixsize, **data_presets, uniqueparams=uniqueparams, moderator_df = moderator_df,
+                                            metric = objectivefunction)
+    if print_test: 
+        fitnessfunction(optimalparamslist)
+        # otherperformancefunction(optimalparamslist)
+        cal.computehourlymonthlyperformance(morphparams=optimalparamslist[9:17],
+                                            meteoparams=optimalparamslist[0:9], 
+                                            repeatsparams=optimalparamslist[17:19],
+                                            scalingparams=optimalparamslist[19:], 
+                                            baseline= True, **data_presets_RIVM, matrixsize=matrixsize, 
+                                            moderator_df = moderator_df, meteolog=meteolog, iter=iter)
 
 if calibtype == "produceMonthlyHourlyPerformance":
     matrixsize = 3
     with open(f"optimalparams_{cellsize}_scalingMS{matrixsize}iter{iter}MeteoLog{meteolog}.json", "r") as read_file:
         optimalparams = json.load(read_file)
     del optimalparams["nr_repeats"]
-    cal.computehourlymonthlyperformance(baseline= True, **data_presets_RIVM, 
+    cal.computehourlymonthlyperformance(baseline= True, **data_presets_RIVM, iter=iter, meteolog=meteolog,
                                         **optimalparams, moderator_df = moderator_df, 
                                         saveHourlyMonthly=True, prefix= "RIVM"+cellsize)
-    cal.computemonthlyperformance(baseline= True, **data_presets, 
+    cal.computemonthlyperformance(baseline= True, **data_presets,  iter=iter, meteolog=meteolog,
                                 **optimalparams, moderator_df = moderator_df, 
                                  saveMonthly=True, prefix= "Palmes"+cellsize)
     GA = False
     
-    
-if GA == True:
+
+if GA:
     GAalgorithm = cal.runGAalgorithm(fitnessfunction, param_settings, popsize, max_iter_noimprov)
     cal.PolishSaveGAresults(GAalgorithm, param_settings, fitnessfunction, otherperformancefunction, 
                             suffix = f"_{cellsize}_{suffix}_{run_nr}_{calibdata}_{objectivefunction}")
+    print(GAalgorithm.result["variable"])
+    print(list(GAalgorithm.result["variable"]))
     cal.addnewoptimalparams(optimalparamdict = optimalparams, calibtype = calibtype, 
-                            newoptimalparams = GAalgorithm.result["variable"], suffix = "_" + cellsize + run_nr)
+                            newoptimalparams = list(GAalgorithm.result["variable"]), suffix = cellsize +"_"+ run_nr)
