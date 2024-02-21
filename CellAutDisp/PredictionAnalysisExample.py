@@ -62,10 +62,10 @@ if any([x in analysistype for x in ["StatusQuoPredMaps", "StatusQuoPredMapsZoome
 
         else:
             # # 2) Defining extent based on a specified bounding box
-            extent = [122500, 481500, 125500, 483500]
-            suffix = "specifiedBB_southeast"
-            # extent = [117800, 487700, 118800,  488600]
-            # suffix = "specifiedBB_Bosleeuw"
+            # extent = [122500, 481500, 125500, 483500]
+            # suffix = "specifiedBB_southeast"
+            extent = [117800, 487700, 118800,  488600]
+            suffix = "specifiedBB_Bosleeuw"
 
         # extracting the cells within the extent
         AirPollGrid_pred_extent = AirPollGrid_pred.cx[extent[0]:extent[2], extent[1]:extent[3]]

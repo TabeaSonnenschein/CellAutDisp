@@ -450,7 +450,7 @@ def SplitYAxis2plusLineGraph(df, xvar, yvar1_list, yvar2_list, yvarlabel1_list, 
     ax.tick_params(labeltop=False)  # don't put tick labels at the top
     ax2.xaxis.tick_bottom()
 
-    plt.savefig(f'{"_".join(yvar1_list)}_and_{"_".join(yvar2_list)}_by_{xvar}{suffix}.png', dpi=400)
+    plt.savefig(f'{"_".join(yvar1_list)}_and_{"_".join(yvar2_list)}_by_{xvar}_{suffix}.png', dpi=400)
 
     if showplots:
         plt.show()
