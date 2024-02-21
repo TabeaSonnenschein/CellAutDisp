@@ -334,7 +334,7 @@ def MapSpatialData(variable, df, label, AirPollGrid,filesuffix = None):
     print(AirPollGrid[variable].describe())
     AirPollGrid.plot(variable, cmap= "viridis", antialiased=False, linewidth = 0.00001, legend = True)
     plt.title(f"{label} Distribution")
-    plt.savefig(f'{variable}_map_{filesuffix}.png', dpi=400)
+    plt.savefig(f'{variable}_map_{filesuffix}.png',bbox_inches='tight', dpi=400)
     plt.close()
 
 
@@ -349,7 +349,7 @@ def MapSpatialDataFixedColorMapSetofVariables(variables, rasterdf, jointlabel, s
         ax.add_artist(scalebar)
         # ax.axis('off')
         plt.title(f"{jointlabel} Distribution: {specificlabel[variables.index(variable)]}")
-        plt.savefig(f'{variable}_map_{suffix}.png', dpi=400)
+        plt.savefig(f'{variable}_map_{suffix}.png', bbox_inches='tight',dpi=400)
         plt.close()
 
 def ParallelMapSpatialDataFixedColorMap(variable, title, rasterdf, jointlabel, vmin, vmax, distance_meters, cmap= "viridis" , suffix = ""):
@@ -361,7 +361,7 @@ def ParallelMapSpatialDataFixedColorMap(variable, title, rasterdf, jointlabel, v
     ax.add_artist(scalebar)
     # ax.axis('off')
     plt.title(f"{jointlabel} Distribution: {title}")
-    plt.savefig(f'{variable}_map_{suffix}.png', dpi=400)
+    plt.savefig(f'{variable}_map_{suffix}.png',bbox_inches='tight', dpi=400)
     plt.close()
 
 def ParallelMapSpatialData_StreetsFixedColorMap(variable, title, rasterdf, streets, jointlabel, vmin, vmax, distance_meters, cmap= "viridis" , suffix = ""):
@@ -375,7 +375,7 @@ def ParallelMapSpatialData_StreetsFixedColorMap(variable, title, rasterdf, stree
     streets.plot(ax=ax, color="black", linewidth=0.5)
     # ax.axis('off')
     plt.title(f"{jointlabel} Distribution: {title}")
-    plt.savefig(f'{variable}_map_{suffix}.png', dpi=400)
+    plt.savefig(f'{variable}_map_{suffix}.png',bbox_inches='tight', dpi=400)
     plt.close()
 
 
