@@ -126,7 +126,10 @@ def continuous_meteo_matrix(matrixsize, meteoparams, temperature, rain, windspee
     #create matrix and distances and degree vectors
     weight_matrix, distances, degrees = create_matrix_and_calculate_vectors(matrixsize)
     degree_alignment = abs(degrees - winddirection)
-    
+    for i in range(len(degree_alignment)):
+        for j in range(len(degree_alignment)):
+            degree_alignment[i][j] = min(degree_alignment[i][j], 360 - degree_alignment[i][j])
+
     # adjust the baseW based on distance and degree alignment
     baseW_dist_degree = baseW*((meteoparams[6]*(1 / (distances+0.01))) + (meteoparams[7]*(1/(degree_alignment + 1)))) #the further away the less the effect, the further from wind direction the less the effect
         

@@ -7,10 +7,10 @@ from provide_adjuster import provide_adjuster
 dataFolder = "D:/PhD EXPANSE/Data/Amsterdam/Air Pollution Determinants"
 os.chdir(dataFolder)
 
-cellsize = "50m"
+cellsize = "25m"
 matrixsize = 3
 iter = False
-meteolog = False
+meteolog = True
 
 monthlyWeather2019 = pd.read_csv("monthlyWeather2019TempDiff.csv") # Read monthlyWeather2019 DataFrame
 moderator_df = pd.read_csv(f"moderator_{cellsize}.csv")     # Read moderator DataFrame
@@ -23,9 +23,9 @@ if not os.path.exists(new_folder):
 os.chdir(new_folder)
         
 analytics = [
-    # "MonthlyMovingWindowMaps", 
-    "HourlyMonthlyPerformanceCharts", 
-    "MonthlyPerformanceCharts",
+    "MonthlyMovingWindowMaps", 
+    # "HourlyMonthlyPerformanceCharts", 
+    # "MonthlyPerformanceCharts",
     # "AdjusterHistogram",
     ]
 
