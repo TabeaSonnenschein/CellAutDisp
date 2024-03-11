@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import xarray as xr
 import json
-from analytics import saveMonthlyHourlyPredictions, saveTrafficScenarioPredictions, measureMonthlyHourlyComputationTime
+from CellAutDisp import saveMonthlyHourlyPredictions, saveTrafficScenarioPredictions, measureMonthlyHourlyComputationTime
 
 dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
 os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))

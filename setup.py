@@ -13,19 +13,16 @@ setup(
         'pandas',
         'matplotlib',
         'seaborn',
-        'time',
         'joblib',
-        'math',
         'geneticalgorithm2',
         'datetime',
-        'json',
         'xarray-spatial',
         'geopandas',
         'shapely',
         'scipy',
         'xarray',
-        'sklearn'
-
+        'scikit-learn',
+        'pyarrow>=14.0.1'
     ],
     entry_points={
         'console_scripts': [

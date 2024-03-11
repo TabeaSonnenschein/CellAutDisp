@@ -1,13 +1,13 @@
+from .performance_metrics import *
+from .provide_adjuster import provide_adjuster
+from .create_weighted_matrix import returnCorrectWeightedMatrix
+from .cellautom_dispersion import compute_hourly_dispersion
 import pandas as pd
-import performance_metrics
 import numpy as np
-from create_weighted_matrix import returnCorrectWeightedMatrix
 from joblib import Parallel, delayed
 from math import sqrt
-from provide_adjuster import provide_adjuster
 from geneticalgorithm2 import geneticalgorithm2  as ga
 from datetime import datetime
-from cellautom_dispersion import compute_hourly_dispersion
 import json
 
 def compute_mean_monthly_dispersion(raster, baselineNO2, TrafficNO2perhour, onroadindices, 
@@ -53,7 +53,7 @@ def compute_MeteoMatrixsizeRepeats(raster, baselineNO2, TrafficNO2perhour, onroa
     Pred = compute_mean_monthly_dispersion(raster = raster, baselineNO2 = baselineNO2, TrafficNO2perhour= TrafficNO2perhour,
                                            onroadindices = onroadindices,weightmatrix = weightmatrix,
                                            nr_repeats=params[0])
-    return performance_metrics.compute_Metric(pred=Pred, obs = observations, metric= metric)
+    return compute_Metric(pred=Pred, obs = observations, metric= metric)
 
 
 def compute_MorphAdjust(raster, baselineNO2, TrafficNO2perhour, onroadindices, 
@@ -62,7 +62,7 @@ def compute_MorphAdjust(raster, baselineNO2, TrafficNO2perhour, onroadindices,
     weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= meteoparams, meteovalues = meteovalues)
     Pred = compute_mean_monthly_dispersion(raster = raster, baselineNO2 = baselineNO2, TrafficNO2perhour= TrafficNO2perhour,
                                            onroadindices = onroadindices, weightmatrix = weightmatrix, nr_repeats=nr_repeats, adjuster=adjuster, iter = iter)
-    return performance_metrics.compute_Metric(pred=Pred, obs = observations, metric= metric)
+    return compute_Metric(pred=Pred, obs = observations, metric= metric)
 
 def compute_MeteoNrRepeats(params, raster, baselineNO2, TrafficNO2perhour, onroadindices, 
                 meteovalues, observations, meteoparams, adjuster, matrixsize
@@ -71,7 +71,7 @@ def compute_MeteoNrRepeats(params, raster, baselineNO2, TrafficNO2perhour, onroa
     nr_repeats = params[0] + (params[1] * meteovalues[2])
     Pred = compute_mean_monthly_dispersion(raster = raster, baselineNO2 = baselineNO2, TrafficNO2perhour= TrafficNO2perhour,
                                            onroadindices = onroadindices, weightmatrix = weightmatrix, nr_repeats=nr_repeats, adjuster=adjuster, iter = iter)
-    return performance_metrics.compute_Metric(pred=Pred, obs = observations, metric= metric)
+    return compute_Metric(pred=Pred, obs = observations, metric= metric)
 
 
 def compute_AddTempDiff(raster, baselineNO2, TrafficNO2perhour, onroadindices, nr_repeats,
@@ -80,7 +80,7 @@ def compute_AddTempDiff(raster, baselineNO2, TrafficNO2perhour, onroadindices, n
     weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= meteoparams + list(params), meteovalues = meteovalues, flex= True, log_indices= log_indices)
     Pred = compute_mean_monthly_dispersion(raster = raster, baselineNO2 = baselineNO2, TrafficNO2perhour= TrafficNO2perhour,
                                            onroadindices = onroadindices, weightmatrix = weightmatrix, nr_repeats=nr_repeats, adjuster=adjuster, iter = iter)    
-    return performance_metrics.compute_Metric(pred=Pred, obs = observations, metric= metric)
+    return compute_Metric(pred=Pred, obs = observations, metric= metric)
 
 
 def compute_Scaling(params, raster, baselineNO2, TrafficNO2perhour, onroadindices, 
@@ -93,7 +93,7 @@ def compute_Scaling(params, raster, baselineNO2, TrafficNO2perhour, onroadindice
                                            nr_repeats=nr_repeats, adjuster=adjuster, iter = iter,  baseline = True,
                                            baseline_coeff = params[0], traffemissioncoeff_onroad= params[1],  
                                            traffemissioncoeff_offroad= params[2])
-    return performance_metrics.compute_Metric(pred=Pred, obs = observations, metric= metric)
+    return compute_Metric(pred=Pred, obs = observations, metric= metric)
 
 def compute_Allparams(params, raster, baselineNO2, TrafficNO2perhour, onroadindices, 
                 meteovalues, observations, adjuster, matrixsize, 
@@ -105,7 +105,7 @@ def compute_Allparams(params, raster, baselineNO2, TrafficNO2perhour, onroadindi
                                            nr_repeats=nr_repeats, adjuster=adjuster, iter = iter,  baseline = True,
                                            baseline_coeff = params[19], traffemissioncoeff_onroad= params[20],  
                                            traffemissioncoeff_offroad= params[21])
-    return performance_metrics.compute_Metric(pred=Pred, obs = observations, metric= metric)
+    return compute_Metric(pred=Pred, obs = observations, metric= metric)
 
 
 
@@ -156,14 +156,14 @@ def computehourlymonthlyperformance(raster, TrafficNO2perhour, baselineNO2, onro
                                                   onroadindices = onroadindices, weightmatrix = weightmatrix, nr_repeats = nr_repeats,
                                                   adjuster=adjuster, iter = iter, baseline = baseline, baseline_coeff = scalingparams[0], 
                                                 traffemissioncoeff_onroad = scalingparams[1],traffemissioncoeff_offroad = scalingparams[2])
-                r, MSE, MAE, ME = performance_metrics.compute_all_metrics(pred=Pred, obs = observations.iloc[:,(month * 24) + hour])
+                r, MSE, MAE, ME = compute_all_metrics(pred=Pred, obs = observations.iloc[:,(month * 24) + hour])
                 rs.append(r)
                 MSEs.append(MSE)
                 MAEs.append(MAE)
                 MEs.append(ME)
-    performance_metrics.print_all_metrics(np.mean(rs), np.mean(MSEs), np.mean(MAEs), np.mean(MEs), prefix = prefix + "HourlyMonthlyEvaluation")
+    print_all_metrics(np.mean(rs), np.mean(MSEs), np.mean(MAEs), np.mean(MEs), prefix = prefix + "HourlyMonthlyEvaluation")
     if saveHourlyMonthly:
-        performance_metrics.SavePerformancePerMonthHour(MSE = MSEs, R = rs, MAE = MAEs, ME = MEs, filename = "HourlyMonthlyPerformance", prefix = prefix)
+        SavePerformancePerMonthHour(MSE = MSEs, R = rs, MAE = MAEs, ME = MEs, filename = "HourlyMonthlyPerformance", prefix = prefix)
     return np.mean(rs)**2, sqrt(np.mean(MSEs)), np.mean(MAEs), np.mean(MEs)
 
 def computemonthlyperformance(raster, TrafficNO2perhour, baselineNO2, onroadindices, 
@@ -213,14 +213,14 @@ def computemonthlyperformance(raster, TrafficNO2perhour, baselineNO2, onroadindi
                                            nr_repeats=nr_repeats, adjuster=adjuster, iter = iter,  baseline = baseline,
                                            baseline_coeff = scalingparams[0], traffemissioncoeff_onroad= scalingparams[1],  
                                            traffemissioncoeff_offroad= scalingparams[2])
-            r, MSE, MAE, ME = performance_metrics.compute_all_metrics(pred=Pred, obs = observations.iloc[:,month])
+            r, MSE, MAE, ME = compute_all_metrics(pred=Pred, obs = observations.iloc[:,month])
             rs.append(r)
             MSEs.append(MSE)
             MAEs.append(MAE)
             MEs.append(ME)
-    performance_metrics.print_all_metrics(np.mean(rs), np.mean(MSEs), np.mean(MAEs), np.mean(MEs), prefix = prefix + "MonthlyEvaluation")
+    print_all_metrics(np.mean(rs), np.mean(MSEs), np.mean(MAEs), np.mean(MEs), prefix = prefix + "MonthlyEvaluation")
     if saveMonthly:
-        performance_metrics.SavePerformancePerMonth(MSE = MSEs, R = rs, MAE = MAEs, ME = MEs, filename = "MonthlyPerformance", prefix = prefix)
+        SavePerformancePerMonth(MSE = MSEs, R = rs, MAE = MAEs, ME = MEs, filename = "MonthlyPerformance", prefix = prefix)
     return np.mean(rs)**2, sqrt(np.mean(MSEs)), np.mean(MAEs), np.mean(MEs)
 
 
@@ -258,7 +258,7 @@ def makeR2ErrorRMSEfunctions(computefunction, nr_cpus, data_presets, observation
                 r = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets, meteovalues = meteovalues_df.iloc[month].values, 
                                                                         observations = observations.iloc[:,month],
                                                                         **uniqueparams, metric = "R2"  ) for month in range(12))
-                performance_metrics.print_R2(np.mean(r))
+                print_R2(np.mean(r))
                 return 1-np.mean(r)
             def fitnessfunctionErrors(params):
                 adjuster = provide_adjuster( morphparams = params, GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
@@ -269,7 +269,7 @@ def makeR2ErrorRMSEfunctions(computefunction, nr_cpus, data_presets, observation
                                                                         observations = observations.iloc[:,month],
                                                                         **uniqueparams, metric = "Errors") for month in range(12))
                 MSE, MAE, ME = zip(*results)
-                performance_metrics.print_Errors(np.mean(MSE), np.mean(MAE), np.mean(ME), prefix = "")
+                print_Errors(np.mean(MSE), np.mean(MAE), np.mean(ME), prefix = "")
                 return sqrt(np.mean(MSE)), np.mean(MAE), np.mean(ME)
             def fitnessfunctionRMSE(params):
                 adjuster = provide_adjuster( morphparams = params, GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
@@ -279,7 +279,7 @@ def makeR2ErrorRMSEfunctions(computefunction, nr_cpus, data_presets, observation
                 MSE = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets, meteovalues = meteovalues_df.iloc[month].values, 
                                                                         observations = observations.iloc[:,month],
                                                                         **uniqueparams, metric = "RMSE") for month in range(12))
-                performance_metrics.print_RMSE(np.mean(MSE), prefix = "")
+                print_RMSE(np.mean(MSE), prefix = "")
                 return sqrt(np.mean(MSE))
         else:
             def fitnessfunctionR(params):
@@ -290,7 +290,7 @@ def makeR2ErrorRMSEfunctions(computefunction, nr_cpus, data_presets, observation
                 r = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets, params = params, meteovalues = meteovalues_df.iloc[month].values, 
                                                                         observations = observations.iloc[:,month],
                                                                         **uniqueparams, metric = "R2"  ) for month in range(12))
-                performance_metrics.print_R2(np.mean(r))
+                print_R2(np.mean(r))
                 return 1-np.mean(r)
             def fitnessfunctionErrors(params):
                 adjuster = provide_adjuster( morphparams = params[9:17], GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
@@ -301,7 +301,7 @@ def makeR2ErrorRMSEfunctions(computefunction, nr_cpus, data_presets, observation
                                                                         observations = observations.iloc[:,month],
                                                                         **uniqueparams, metric = "Errors") for month in range(12))
                 MSE, MAE, ME = zip(*results)
-                performance_metrics.print_Errors(np.mean(MSE), np.mean(MAE), np.mean(ME), prefix = "")
+                print_Errors(np.mean(MSE), np.mean(MAE), np.mean(ME), prefix = "")
                 return sqrt(np.mean(MSE)), np.mean(MAE), np.mean(ME)
             def fitnessfunctionRMSE(params):
                 adjuster = provide_adjuster( morphparams = params[9:17], GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
@@ -311,27 +311,27 @@ def makeR2ErrorRMSEfunctions(computefunction, nr_cpus, data_presets, observation
                 MSE = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets,params = params, meteovalues = meteovalues_df.iloc[month].values, 
                                                                         observations = observations.iloc[:,month],
                                                                         **uniqueparams, metric = "RMSE") for month in range(12))
-                performance_metrics.print_RMSE(np.mean(MSE), prefix = "")
+                print_RMSE(np.mean(MSE), prefix = "")
                 return sqrt(np.mean(MSE))
     else:
         def fitnessfunctionR(params):
             r = Parallel(n_jobs=nr_cpus)(delayed(computefunction)(**data_presets, params = params,  meteovalues = meteovalues_df.iloc[month].values, 
                                                                     observations = observations.iloc[:,month],
                                                                     **uniqueparams, metric = "R2"  ) for month in range(12))
-            performance_metrics.print_R2(np.mean(r))
+            print_R2(np.mean(r))
             return 1-np.mean(r)
         def fitnessfunctionErrors(params):
             results = Parallel(n_jobs=nr_cpus)(delayed(computefunction)( **data_presets, params = params,  meteovalues = meteovalues_df.iloc[month].values, 
                                                                     observations = observations.iloc[:,month],
                                                                     **uniqueparams, metric = "Errors") for month in range(12))
             MSE, MAE, ME = zip(*results)
-            performance_metrics.print_Errors(np.mean(MSE), np.mean(MAE), np.mean(ME), prefix = "")
+            print_Errors(np.mean(MSE), np.mean(MAE), np.mean(ME), prefix = "")
             return sqrt(np.mean(MSE)), np.mean(MAE), np.mean(ME)
         def fitnessfunctionRMSE(params):
             MSE = Parallel(n_jobs=nr_cpus)(delayed(computefunction)( **data_presets, params = params, meteovalues = meteovalues_df.iloc[month].values, 
                                                                     observations = observations.iloc[:,month],
                                                                     **uniqueparams, metric = "RMSE") for month in range(12))
-            performance_metrics.print_RMSE(np.mean(MSE), prefix = "")
+            print_RMSE(np.mean(MSE), prefix = "")
             return sqrt(np.mean(MSE))
     return fitnessfunctionR, fitnessfunctionErrors, fitnessfunctionRMSE
 

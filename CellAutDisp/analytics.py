@@ -2,10 +2,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib import gridspec
 import os
-from create_weighted_matrix import returnCorrectWeightedMatrix
+from .create_weighted_matrix import returnCorrectWeightedMatrix
 import numpy as np
-from provide_adjuster import provide_adjuster
-from calibration import compute_hourly_dispersion
+from .provide_adjuster import provide_adjuster
+from .calibration import compute_hourly_dispersion
 import pandas as pd
 import seaborn as sns
 from matplotlib_scalebar.scalebar import ScaleBar

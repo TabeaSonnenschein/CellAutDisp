@@ -1,10 +1,9 @@
-import calibration as cal
+import CellAutDisp.calibration as cal
+from CellAutDisp import provide_adjuster
 import os
 import pandas as pd
 import xarray as xr
-from joblib import Parallel, delayed
 import copy
-from provide_adjuster import provide_adjuster
 import json
 
 # Set the data folder and cell size
@@ -16,7 +15,7 @@ cellsize = "50m"
 print(cellsize)
 nr_cpus = 15
 suffix = "TrV_TrI_noTrA"
-calibtype = "produceMonthlyHourlyPerformance" # One of: meteomatrixsizerepeats, morph, meteonrrepeat, scaling, allparams
+calibtype = "meteomatrixsizerepeats" # One of: meteomatrixsizerepeats, morph, meteonrrepeat, scaling, allparams
 popsize, max_iter_noimprov, seed = 20, 5, 42
 calibdata = "Palmes"
 GA = True

@@ -4,7 +4,7 @@ from xrspatial.utils import ngjit
 import numpy as np
 import os
 import pandas as pd
-from data_preparation import FindRoadNeighboringCells
+from CellAutDisp import FindRoadNeighboringCells
 
 # Set the data folder and cell size
 dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
