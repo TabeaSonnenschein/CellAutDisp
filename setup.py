@@ -13,7 +13,6 @@ setup(
         'pandas',
         'matplotlib',
         'seaborn',
-        'os',
         'time',
         'joblib',
         'math',
