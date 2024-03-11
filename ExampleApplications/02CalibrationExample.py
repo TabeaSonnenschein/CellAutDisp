@@ -11,9 +11,9 @@ dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
 os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
 
 ## Set the parameters
-cellsize = "50m"
-print(cellsize)
-nr_cpus = 15
+cellsize = "50m"  #the matrix cell size
+print(cellsize) 
+nr_cpus = 15 # number of cpus to use for parallel processing
 suffix = "TrV_TrI_noTrA"
 calibtype = "meteomatrixsizerepeats" # One of: meteomatrixsizerepeats, morph, meteonrrepeat, scaling, allparams
 popsize, max_iter_noimprov, seed = 20, 5, 42

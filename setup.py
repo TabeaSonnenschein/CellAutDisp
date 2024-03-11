@@ -3,6 +3,9 @@ from setuptools import setup, find_packages
 # This file contains metadata about your package, such as its name, version, description, dependencies, and other details.
 # Example setup.py
 
+with open("README.md", "r") as read_file:
+    long_description = read_file.read()
+
 setup(
     name='CellAutDisp',
     version='0.1',
@@ -29,4 +32,6 @@ setup(
             'mypackage-cli = mypackage.module1:main_function',
         ],
     },
+    long_description=long_description,
+    long_description_content_type="text/markdown",
 )

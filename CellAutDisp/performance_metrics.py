@@ -137,6 +137,15 @@ def print_RMSE(MSE, prefix = ""):
     print(f"{prefix} RMSE: {sqrt(MSE)}")
     
 def printPerformancePerMonthHour(MSE, R, MAE, ME, prefix = ""):
+    """This function prints the performance metrics per month and hour.
+
+    Args:
+        MSE (float): The Mean Squared Error, will be used to print the Root Mean Squared Error
+        R (float): The Pearson correlation coefficient
+        MAE (float): The Mean Average Error
+        ME (float): The Mean Error
+        prefix (str, optional): A Prefix that will be added in front of the print. Defaults to "".
+    """
     for month in range(12):
         for hour in range(24):
             print(f"{prefix} R2 {month+1} {hour+1}: {R[month*24 + hour]**2}")
@@ -146,6 +155,16 @@ def printPerformancePerMonthHour(MSE, R, MAE, ME, prefix = ""):
             
 
 def SavePerformancePerMonthHour(MSE, R, MAE, ME, filename, prefix = ""):
+    """This function saves the performance metrics per month and hour to a csv file.
+
+    Args:
+        MSE (float): The Mean Squared Error, will be used to print the Root Mean Squared Error
+        R (float): The Pearson correlation coefficient
+        MAE (float): The Mean Average Error
+        ME (float): The Mean Error
+        filename (str): the name of the file, it will be prefixed with the optional prefix.
+        prefix (str, optional): A Prefix that will be added to the dataframe. Defaults to "".
+    """
     pd.DataFrame({"Prefix": [prefix for i in range(12*24)],
                   "Month": [i for i in range(1,13) for j in range(24)],
                   "Hour": [j+1 for i in range(12) for j in range(24)],
@@ -155,6 +174,16 @@ def SavePerformancePerMonthHour(MSE, R, MAE, ME, filename, prefix = ""):
                   "ME": ME}).to_csv(prefix+filename+".csv", index = False)
 
 def SavePerformancePerMonth(MSE, R, MAE, ME, filename, prefix = ""):
+    """This function saves the performance metrics per month to a csv file.
+
+    Args:
+        MSE (float): The Mean Squared Error, will be used to print the Root Mean Squared Error
+        R (float): The Pearson correlation coefficient
+        MAE (float): The Mean Average Error
+        ME (float): The Mean Error
+        filename (str): the name of the file, it will be prefixed with the optional prefix.
+        prefix (str, optional): A Prefix that will be added to the dataframe. Defaults to "".
+    """
     pd.DataFrame({"Prefix": [prefix for i in range(12)],
                   "Month": [i for i in range(1,13)],
                   "R2": [r**2 for r in R], 

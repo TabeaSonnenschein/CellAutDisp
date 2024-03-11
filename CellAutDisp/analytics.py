@@ -3,9 +3,9 @@ import matplotlib.patches as patches
 from matplotlib import gridspec
 import os
 from .create_weighted_matrix import returnCorrectWeightedMatrix
-import numpy as np
 from .provide_adjuster import provide_adjuster
 from .calibration import compute_hourly_dispersion
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib_scalebar.scalebar import ScaleBar
@@ -337,13 +337,19 @@ def measureMonthlyHourlyComputationTime(raster, TrafficNO2perhour, baselineNO2, 
     return CompTime_df
 
 def plotComputationTime(comp_time_df, stressor, cellsize):
+    """This function plots the computation time per hour and month as a lineplot and a heatmap.
+
+    Args:
+        comp_time_df (dataframe(float)): dataframe with the computation time measurements for each hour and month.
+        stressor (str): The stressor for which the predictions are made.
+        cellsize (str): The cellsize of the grid (e.g. 25m, 50m, 100m).
+    """
     # lineplot
     plt.figure(figsize=(10, 6))
     comp_time_df["month"] = comp_time_df["month"] + 1
     for month in range(1,13):
         month_data = comp_time_df[comp_time_df["month"] == month]
         plt.plot(month_data["hour"], month_data["ComputationTime"], label=f"Month {month + 1}")
-
     plt.title(f"Computation Time per Hour ({cellsize} x {cellsize} grid)")
     plt.xlabel("Hour")
     plt.ylabel("Computation Time (seconds)")
@@ -384,6 +390,14 @@ def PrintSaveSummaryStats(df, dfname, suffix = ""):
 
 
 def SingleVarViolinplot(df,variable, ylabel = None, filesuffix = ""):
+    """This function creates a violin plot of a single variable and saves it to a file.
+
+    Args:
+        df (dataframe(float)): A dataframe with the data.
+        variable (str): The variable for which to create the violin plot. It should be a column in the dataframe.
+        ylabel (str, optional): A string label to use for the variable. Defaults to None.
+        filesuffix (str, optional): A string for the filesuffix. Defaults to "".
+    """
     if ylabel == None:
         ylabel = variable
     sns.set(style="whitegrid")
@@ -391,12 +405,23 @@ def SingleVarViolinplot(df,variable, ylabel = None, filesuffix = ""):
     sns.violinplot(y=variable, data=df, linewidth=0, color= "#009999")
     plt.xlabel("Across Space")
     plt.ylabel(ylabel)
-    plt.title(f"Violin Plot of Baseline NO2 Distribution")
+    plt.title(f"Violin Plot of {ylabel} Distribution")
     plt.savefig(f'Violinplot_{variable}{filesuffix}.png',bbox_inches='tight',  dpi = 400)
     plt.close()
 
 
 def ViolinOverTimeColContinous(xvar, yvar, showplots, df, ylabel = None, xlabel = None, suffix = ""):
+    """This function creates a violin plot of a continuous variable over time and saves it to a file.
+
+    Args:
+        xvar (str): The variable for the x-axis.
+        yvar (str): The variable for the y-axis.
+        showplots (bool): A boolean to indicate whether to show the plot.
+        df (dataframe(float)): A dataframe with the data.
+        ylabel (str, optional): A string label to use for the y variable. Defaults to None.
+        xlabel (str, optional): A string label to use for the x variable.. Defaults to None.
+        suffix (str, optional): A string for the filesuffix. Defaults to "".
+    """
     if ylabel is None:
         ylabel = yvar
     if xlabel is None:
@@ -425,6 +450,21 @@ def ViolinOverTimeColContinous(xvar, yvar, showplots, df, ylabel = None, xlabel 
 
 
 def ViolinOverTimeColContinous_WithMaxSubgroups(xvar, yvar, showplots, df, subgroups, subgrouplabels = None, ylabel = None, xlabel = None ,suffix = ""):
+    """This function creates a violin plot of a continuous variable over time with the maximum values of different subgroups and saves it to a file.
+
+    Args:
+        xvar (str): The variable for the x-axis.
+        yvar (str): The variable for the y-axis.
+        showplots (bool): A boolean to indicate whether to show the plot.
+        df (dataframe(float)): A dataframe with the data.
+        subgroups (list(str)): A list of the subgroups for which to calculate the maximum values.
+        subgrouplabels (list(str), optional): A list of string labels to use for the subgroups. Defaults to None.
+        ylabel (str, optional): A string label to use for the y variable. Defaults to None.
+        xlabel (str, optional): A string label to use for the x variable.. Defaults to None.
+        suffix (str, optional): A string for the filesuffix. Defaults to "".
+        
+    """
+    
     if ylabel is None:
         ylabel = yvar
     if xlabel is None:
@@ -461,6 +501,15 @@ def ViolinOverTimeColContinous_WithMaxSubgroups(xvar, yvar, showplots, df, subgr
 
 
 def MapSpatialData(variable, df, label, AirPollGrid,filesuffix = None):
+    """This function maps the spatial distribution of a variable and saves it to a file.
+
+    Args:
+        variable (str): The variable for which to create the map.
+        df (dataframe(float)): A dataframe with the data.
+        label (str): A string label to use for the variable.
+        AirPollGrid (geodataframe): A geodataframe with the spatial data.
+        filesuffix (str, optional): A string for the filesuffix. Defaults to None.
+    """
     AirPollGrid = AirPollGrid.merge(df[["int_id", variable]], on="int_id", how="left")
     print(AirPollGrid[variable].describe())
     AirPollGrid.plot(variable, cmap= "viridis", antialiased=False, linewidth = 0.00001, legend = True)
@@ -471,6 +520,20 @@ def MapSpatialData(variable, df, label, AirPollGrid,filesuffix = None):
 
 def MapSpatialDataFixedColorMapSetofVariables(variables, rasterdf, jointlabel, specificlabel, vmin, vmax, 
                                               distance_meters, cmap= "viridis" , suffix = ""):
+    """This function maps the spatial distribution of a set of variables and saves them to files. 
+    It uses a fixed color map.
+
+    Args:
+        variables (list(str)): A list of variables for which to create the maps.
+        rasterdf (geodataframe): A geodataframe with the spatial data.
+        jointlabel (str): A string label to use for the variables.
+        specificlabel (list(str)): A list of string labels to use for the variables.
+        vmin (float): The minimum value for the color map.
+        vmax (float): The maximum value for the color map.
+        distance_meters (int): The distance in meters for the scale bar.
+        cmap (str, optional): The color map to use. Defaults to "viridis".
+        suffix (str, optional): A string for the filesuffix. Defaults to "".
+    """
     for variable in variables:
         print(rasterdf[variable].describe())
         ax= rasterdf.plot(variable, cmap= cmap, antialiased=False, linewidth = 0.00001, legend = True, vmin = vmin, vmax=vmax)
@@ -484,6 +547,20 @@ def MapSpatialDataFixedColorMapSetofVariables(variables, rasterdf, jointlabel, s
         plt.close()
 
 def ParallelMapSpatialDataFixedColorMap(variable, title, rasterdf, jointlabel, vmin, vmax, distance_meters, cmap= "viridis" , suffix = ""):
+    """This function maps the spatial distribution of a variable and saves it to a file. 
+    It uses a fixed color map. This function can be used for producing the maps in a parallelized way.
+    
+    Args:
+        variables (list(str)): A list of variables for which to create the maps.
+        title (str): a string label for the title of the map.
+        rasterdf (geodataframe): A geodataframe with the spatial data.
+        jointlabel (str): A string label to use for the variables.
+        vmin (float): The minimum value for the color map.
+        vmax (float): The maximum value for the color map.
+        distance_meters (int): The distance in meters for the scale bar.
+        cmap (str, optional): The color map to use. Defaults to "viridis".
+        suffix (str, optional): A string for the filesuffix. Defaults to "".
+    """
     print(rasterdf[variable].describe())
     ax= rasterdf.plot(variable, cmap= cmap, antialiased=False, linewidth = 0.00001, legend = True, vmin = vmin, vmax=vmax)
     ax.set_xlim(rasterdf.total_bounds[0], rasterdf.total_bounds[2])
@@ -496,6 +573,20 @@ def ParallelMapSpatialDataFixedColorMap(variable, title, rasterdf, jointlabel, v
     plt.close()
 
 def ParallelMapSpatialData_StreetsFixedColorMap(variable, title, rasterdf, streets, jointlabel, vmin, vmax, distance_meters, cmap= "viridis" , suffix = ""):
+    """This function maps the spatial distribution of a variable and saves it to a file. 
+
+    Args:
+        variables (list(str)): A list of variables for which to create the maps.
+        title (str): a string label for the title of the map.
+        rasterdf (geodataframe): A geodataframe with the spatial data of a raster grid.
+        streets (geodataframe): A geodataframe with the streets.
+        jointlabel (str): A string label to use for the variables.
+        vmin (float): The minimum value for the color map.
+        vmax (float): The maximum value for the color map.
+        distance_meters (int): The distance in meters for the scale bar.
+        cmap (str, optional): The color map to use. Defaults to "viridis".
+        suffix (str, optional): A string for the filesuffix. Defaults to "".
+    """
     print(rasterdf[variable].describe())
     ax= rasterdf.plot(variable, cmap= cmap, antialiased=False, linewidth = 0.00001, legend = True, vmin = vmin, vmax=vmax)
     ax.set_xlim(rasterdf.total_bounds[0], rasterdf.total_bounds[2])
@@ -512,6 +603,15 @@ def ParallelMapSpatialData_StreetsFixedColorMap(variable, title, rasterdf, stree
 
 
 def ScatterplotContinuous(df, yvariable, xvariable, ylabel = None, xlabel = None):
+    """This function creates a scatterplot of a continuous variable and saves it to a file.
+
+    Args:
+        df (dataframe(float)): A dataframe with the data.
+        yvariable (str): The variable for the y-axis.
+        xvariable (str): The variable for the x-axis.
+        ylabel (str, optional): A string label to use for the y variable. Defaults to None.
+        xlabel (str, optional): A string label to use for the x variable.. Defaults to None.
+    """
     if ylabel == None:
         ylabel = yvariable
     if xlabel == None:
@@ -530,6 +630,24 @@ def ScatterplotContinuous(df, yvariable, xvariable, ylabel = None, xlabel = None
 
 
 def SplitYAxisLineGraph(df, xvar, yvar1, yvar2, yvarlabel1, yvarlabel2,  ylimmin1,ylinmax1,ylimmin2,ylinmax2, xlabel, ylabel1, ylabel2, showplots = False):
+    """This function creates a split y-axis line graph and saves it to a file. This function is useful for comparing two variables with different scales.
+
+    Args:
+        df (dataframe(float)): A dataframe with the data.
+        xvar (str): The variable for the x-axis.
+        yvar1 (str): The variable for the first y-axis.
+        yvar2 (str): The variable for the second y-axis.
+        yvarlabel1 (str): A string label to use for the first y variable.
+        yvarlabel2 (str): A string label to use for the second y variable.
+        ylimmin1 (int): The minimum value for the first y-axis.
+        ylinmax1 (int): The maximum value for the first y-axis.
+        ylimmin2 (int): The minimum value for the second y-axis.
+        ylinmax2 (int): The maximum value for the second y-axis.
+        xlabel (str): A string label to use for the x variable.
+        ylabel1 (str): A string label to use for the first y variable.
+        ylabel2 (str): A string label to use for the second y variable.
+        showplots (bool, optional): A boolean to indicate whether to show the plot. Defaults to False.
+    """
     f, (ax, ax2) = plt.subplots(2, 1, sharex=True)
     sns.lineplot(ax=ax, x=xvar, y=yvar1, data=df, color = "#C00000", legend= "brief", label = yvarlabel1)
     sns.lineplot(ax=ax2, x=xvar, y=yvar2, data=df, color = "#009999", legend= "brief", label = yvarlabel2)
@@ -552,6 +670,26 @@ def SplitYAxisLineGraph(df, xvar, yvar1, yvar2, yvarlabel1, yvarlabel2,  ylimmin
 def SplitYAxis2plusLineGraph(df, xvar, yvar1_list, yvar2_list, yvarlabel1_list, yvarlabel2_list, 
                              ylimmin1, ylinmax1, ylimmin2, ylinmax2, xlabel, ylabel1, 
                              ylabel2, showplots=False, suffix=""):
+    """This function creates a split y-axis line graph with multiple lines for the second y variable and saves it to a file. 
+    This function is useful for comparing multiple variables with different scales.
+
+    Args:
+        df (dataframe(float)): A dataframe with the data.
+        xvar (str): The variable for the x-axis.
+        yvar1_list (list(str)): A list of variables for the first y-axis.
+        yvar2_list (list(str)): A list of variables for the second y-axis.
+        yvarlabel1_list (list(str)): A list of string labels to use for the first y variables.
+        yvarlabel2_list (list(str)): A list of string labels to use for the second y variables.
+        ylimmin1 (int): The minimum value for the first y-axis.
+        ylinmax1 (int): The maximum value for the first y-axis.
+        ylimmin2 (int): The minimum value for the second y-axis.
+        ylinmax2 (int): The maximum value for the second y-axis.
+        xlabel (str): A string label to use for the x variable.
+        ylabel1 (str): A string label to use for the first y variable.
+        ylabel2 (str): A string label to use for the second y variable.
+        showplots (bool, optional): A boolean to indicate whether to show the plot. Defaults to False.
+        suffix (str, optional): A string for the filesuffix. Defaults to "".
+    """
     f, (ax, ax2) = plt.subplots(2, 1, sharex=True)
     ax2.axhline(y=0, linestyle='--', color='gray', linewidth=0.6)
     ax.axhline(y=0, linestyle='--', color='gray', linewidth=0.6)
