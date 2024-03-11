@@ -2,24 +2,24 @@ import os
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry.point import Point
-from analytics import PrintSaveSummaryStats, MapSpatialDataFixedColorMapSetofVariables, ParallelMapSpatialDataFixedColorMap, ParallelMapSpatialData_StreetsFixedColorMap, ViolinOverTimeColContinous, SplitYAxis2plusLineGraph, meltPredictions, plotComputationTime
+from analytics import PrintSaveSummaryStats, MapSpatialDataFixedColorMapSetofVariables, ParallelMapSpatialDataFixedColorMap, ParallelMapSpatialData_StreetsFixedColorMap, ViolinOverTimeColContinous, SplitYAxis2plusLineGraph, meltPredictions, plotComputationTime,ViolinOverTimeColContinous_WithMaxSubgroups
 from joblib import Parallel, delayed
 
 dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
 os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
 
-cellsize = "50m"
+cellsize = "25m"
+predsuffix = "TrV_TrI_noTrA22"
 crs = 28992
 stressor = "NO2"
 unit = "(µg/m3)"
 analysistype = [
     # "StatusQuoPredMaps", 
     # "StatusQuoPredMapsZoomed", 
-    # "ViolinPlotsStressors", 
+    "ViolinPlotsStressors", 
     # "ScenarioLinePlot",
-    "ComputationTimeVisualisation"
+    # "ComputationTimeVisualisation"
     ]
-predsuffix = "TrV_TrI_noTrA"
 
 parallelIfPossible = True
 addStreet = False
@@ -83,20 +83,29 @@ if any([x in analysistype for x in ["StatusQuoPredMaps", "StatusQuoPredMapsZoome
                                                     vmin=0, vmax=65,distance_meters= distance_meters, cmap="turbo", suffix = cellsize + suffix) for variable in columnnames)
 
 if "ViolinPlotsStressors" in analysistype:
-    Predictions = pd.read_csv(f"{stressor}predictions_{cellsize}.csv")               # Read Pred DataFrame
-    Predictions_melted = meltPredictions(Predictions, stressor, cellsize)
-    ViolinOverTimeColContinous(xvar = "month", yvar=stressor, showplots= False, df = Predictions_melted, ylabel=stressor + " " + unit, xlabel = "Month", suffix = cellsize)
-    ViolinOverTimeColContinous(xvar = "hour", yvar=stressor, showplots= False, df = Predictions_melted, ylabel=stressor + " " + unit, xlabel = "Hour", suffix = cellsize)
+    # Predictions = pd.read_csv(f"{stressor}predictions_{cellsize}.csv")               # Read Pred DataFrame
+    # Predictions_melted = meltPredictions(Predictions, stressor, cellsize)
+    # ViolinOverTimeColContinous(xvar = "month", yvar=stressor, showplots= False, df = Predictions_melted, ylabel=stressor + " " + unit, xlabel = "Month", suffix = cellsize)
+    # ViolinOverTimeColContinous(xvar = "hour", yvar=stressor, showplots= False, df = Predictions_melted, ylabel=stressor + " " + unit, xlabel = "Hour", suffix = cellsize)
 
-    # Violin plots for subsets of the data
+    # # Violin plots for subsets of the data
+    # Pred_df = pd.read_csv(f"Pred_{cellsize}{predsuffix}.csv")               # Read Pred DataFrame
+    # Predictions_melted = Predictions_melted.merge(Pred_df[["int_id", "ON_ROAD","ROAD_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR_NEIGHBOR"]], on="int_id", how="left")
+    # Predictions_melted_Onroad = Predictions_melted[Predictions_melted["ON_ROAD"] == 1]
+    # Predictions_melted_RoadNeighbor = Predictions_melted[Predictions_melted["ROAD_NEIGHBOR"] == 1]
+    # ViolinOverTimeColContinous(xvar = "month", yvar=stressor, showplots= False, df = Predictions_melted_Onroad, ylabel=stressor + " " + unit, xlabel = "Month", suffix= cellsize + "Onroad")
+    # ViolinOverTimeColContinous(xvar = "hour", yvar=stressor, showplots= False, df = Predictions_melted_Onroad, ylabel=stressor + " " + unit, xlabel = "Hour", suffix= cellsize +"Onroad")
+    # ViolinOverTimeColContinous(xvar = "month", yvar=stressor, showplots= False, df = Predictions_melted_RoadNeighbor, ylabel=stressor + " " + unit, xlabel = "Month", suffix= cellsize +"RoadNeighbor")
+    # ViolinOverTimeColContinous(xvar = "hour", yvar=stressor, showplots= False, df = Predictions_melted_RoadNeighbor, ylabel=stressor + " " + unit, xlabel = "Hour", suffix= cellsize +"RoadNeighbor")
+    
+    Predictions_melted = pd.read_csv(f"{stressor}predictions_melted_{cellsize}.csv")               # Read Pred DataFrame
     Pred_df = pd.read_csv(f"Pred_{cellsize}{predsuffix}.csv")               # Read Pred DataFrame
-    Predictions_melted = Predictions_melted.merge(Pred_df[["int_id", "ON_ROAD","ROAD_NEIGHBOR"]], on="int_id", how="left")
-    Predictions_melted_Onroad = Predictions_melted[Predictions_melted["ON_ROAD"] == 1]
-    Predictions_melted_RoadNeighbor = Predictions_melted[Predictions_melted["ROAD_NEIGHBOR"] == 1]
-    ViolinOverTimeColContinous(xvar = "month", yvar=stressor, showplots= False, df = Predictions_melted_Onroad, ylabel=stressor + " " + unit, xlabel = "Month", suffix= cellsize + "Onroad")
-    ViolinOverTimeColContinous(xvar = "hour", yvar=stressor, showplots= False, df = Predictions_melted_Onroad, ylabel=stressor + " " + unit, xlabel = "Hour", suffix= cellsize +"Onroad")
-    ViolinOverTimeColContinous(xvar = "month", yvar=stressor, showplots= False, df = Predictions_melted_RoadNeighbor, ylabel=stressor + " " + unit, xlabel = "Month", suffix= cellsize +"RoadNeighbor")
-    ViolinOverTimeColContinous(xvar = "hour", yvar=stressor, showplots= False, df = Predictions_melted_RoadNeighbor, ylabel=stressor + " " + unit, xlabel = "Hour", suffix= cellsize +"RoadNeighbor")
+    Pred_df.loc[(Pred_df["ON_ROAD"] == 1) | (Pred_df["ROAD_NEIGHBOR"] == 1), ["ROAD_NEIGHBOR_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR_NEIGHBOR"]] = 0
+    Pred_df.loc[Pred_df["ROAD_NEIGHBOR_NEIGHBOR"] == 1, "ROAD_NEIGHBOR_NEIGHBOR_NEIGHBOR"] = 0
+    print(Pred_df[["ON_ROAD","ROAD_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR_NEIGHBOR"]].head(20))
+    Predictions_melted = Predictions_melted.merge(Pred_df[["int_id", "ON_ROAD","ROAD_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR_NEIGHBOR"]], on="int_id", how="left")
+    ViolinOverTimeColContinous_WithMaxSubgroups(xvar = "month", yvar=stressor, showplots= False, df = Predictions_melted,subgroups=["ON_ROAD","ROAD_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR"], subgrouplabels=["on road", "neighboring road", "neighboring road neighbor"], ylabel=stressor + " " + unit, xlabel = "Month", suffix= cellsize )
+    ViolinOverTimeColContinous_WithMaxSubgroups(xvar = "hour", yvar=stressor, showplots= False, df = Predictions_melted,subgroups=["ON_ROAD","ROAD_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR"], subgrouplabels=["on road", "neighboring road", "neighboring road neighbor"], ylabel=stressor + " " + unit, xlabel = "Hour", suffix= cellsize )
 
 if "ScenarioLinePlot" in analysistype:
     ScenarioPredictions = pd.read_csv(f"Scenario{stressor}predictions_{cellsize}.csv")

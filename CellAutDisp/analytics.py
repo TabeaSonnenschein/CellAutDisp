@@ -392,7 +392,7 @@ def SingleVarViolinplot(df,variable, ylabel = None, filesuffix = ""):
     plt.xlabel("Across Space")
     plt.ylabel(ylabel)
     plt.title(f"Violin Plot of Baseline NO2 Distribution")
-    plt.savefig(f'Violinplot_{variable}{filesuffix}.png', dpi = 400)
+    plt.savefig(f'Violinplot_{variable}{filesuffix}.png',bbox_inches='tight',  dpi = 400)
     plt.close()
 
 
@@ -416,10 +416,49 @@ def ViolinOverTimeColContinous(xvar, yvar, showplots, df, ylabel = None, xlabel 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(f"Distribution of {ylabel} By {xlabel}")
-    plt.savefig(f'{yvar}_violinplot_by_{xvar}_{suffix}.png', dpi = 400)
+    plt.savefig(f'{yvar}_violinplot_by_{xvar}_{suffix}.png',bbox_inches='tight',  dpi = 400)
     if showplots:
         plt.show()
     plt.close()
+
+
+
+
+def ViolinOverTimeColContinous_WithMaxSubgroups(xvar, yvar, showplots, df, subgroups, subgrouplabels = None, ylabel = None, xlabel = None ,suffix = ""):
+    if ylabel is None:
+        ylabel = yvar
+    if xlabel is None:
+        xlabel = xvar
+    mean_values_per_x = pd.DataFrame(df.groupby(xvar)[yvar].mean())
+    mean_values_per_x.reset_index(inplace=True)
+    mean_values_per_x["index"] = mean_values_per_x.index
+    max_values_per_x = pd.DataFrame(df.groupby(xvar)[yvar].max())
+    max_values_per_x.reset_index(inplace=True)
+    max_values_per_x["index"] = max_values_per_x.index
+    df = df.sort_values(by=[xvar])
+    sns.set(style="whitegrid")
+    plt.figure(figsize=(10, 6))
+    sns.violinplot(x=xvar, y=yvar, color= "#009999", data=df, linewidth=0, order=mean_values_per_x[xvar])
+    sns.lineplot(x="index", y=yvar, data=mean_values_per_x, color = "black", legend= "brief", label = "Mean")
+    # sns.lineplot(x="index", y=yvar, data=max_values_per_x, color = "#C00000", legend= "brief", label = "Max")    
+    if subgrouplabels is None:
+        subgrouplabels = subgroups
+    colors = ["#C00000", "#847B02", "#001180", "#109B0C", "#FFCC99", "#FFFF99", "#CCFF99", "#99FF99", "#99FFCC", "#99FFFF", "#99CCFF", "#9999FF", "#CC99FF", "#FF99FF", "#FF99CC"]
+    for count,subgroup in enumerate(subgroups):
+            subdf = df[df[subgroup] == 1]
+            max_values_per_x = pd.DataFrame(subdf.groupby(xvar)[yvar].max())
+            max_values_per_x.reset_index(inplace=True)
+            max_values_per_x["index"] = max_values_per_x.index
+            sns.lineplot(x="index", y=yvar, data=max_values_per_x, color = colors[count], legend= "brief", label = "Max "+ subgrouplabels[count])
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(f"Distribution of {ylabel} By {xlabel}")
+    plt.savefig(f'{yvar}_violinplot_by_{xvar}_with_subgroups_{suffix}.png',bbox_inches='tight',  dpi = 400)
+    if showplots:
+        plt.show()
+    plt.close()
+
+
 
 def MapSpatialData(variable, df, label, AirPollGrid,filesuffix = None):
     AirPollGrid = AirPollGrid.merge(df[["int_id", variable]], on="int_id", how="left")
