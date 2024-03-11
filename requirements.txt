@@ -1,0 +1,17 @@
+numpy
+pandas
+matplotlib
+seaborn
+os
+time
+joblib
+math
+geneticalgorithm2
+datetime
+json
+xarray-spatial
+geopandas
+shapely
+scipy
+xarray
+sklearn
