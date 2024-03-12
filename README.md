@@ -11,17 +11,23 @@ This Python package provides functionalities for the dispersion modeling of traf
 
 ## Installation
 
-Describe how to install your project. Include any dependencies that need to be installed, and provide code examples if necessary.
-
+The package can be installed using pip.
 ```bash
 pip install CellAutDisp
 ```
 ## Usage
+This instruction manual explains the steps and usage of functions for the purpose of traffic onroad to off road dispersion modeling. Selected important functions including their inputs are casted in italic for ease of identification. 
 
-Functions including their inputs are casted in italic for ease of identification. This instruction manual explains the steps and usage of functions for the purpose of traffic onroad to off road dispersion modeling.
+Broadly speaking the steps are:
+1. [Data Preparation](#data-preparation)
+2. [Calibration](#calibration)
+3. Calibration Results Analysis
+4. Scenario Analysis
+5. Use of calibrated final model
+
 
 ### Steps
-1. **Data Preparation**
+1. **Data Preparation** <a id="data-preparation"></a>
    
    1.1 Required Data:
    - baseline NO2
@@ -75,7 +81,7 @@ Functions including their inputs are casted in italic for ease of identification
         <sub>This function takes the weightmatrix, the airpollution raster, the number of iterations, the baseline NO2 values, the onroadvalues, the morphological adjuster vector, and the baseline and traffemission coefficients and applies the cellular automata dispersion model to the airpollution raster. In this version the adjuster is applied in each iteration. The baseline and traffemission coefficients are applied in the end to scale the estimations.<sub>
 
 
-3. **Calibration**
+3. **Calibration** <a id="calibration"></a>
 
    3.1 Stepwise Calibration Process
 
@@ -119,4 +125,4 @@ print(result)
 ```
 
 ## License
-This project is licensed under the MIT License - see the LICENSE.md file for details.
+This project is licensed under the GNU General Public License - see the LICENSE.md file for details.
