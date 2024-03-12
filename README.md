@@ -86,6 +86,7 @@ Apart from the steps for preparing the CA-LUR model, there are core model compon
 
 
 2. **Calibration** <a id="calibration"></a>
+
   An example calibration script can be found [here](https://github.com/TabeaSonnenschein/CellAutDisp/blob/main/ExampleApplications/02CalibrationExample.py).
 
   Stepwise Calibration Process
@@ -106,7 +107,8 @@ Apart from the steps for preparing the CA-LUR model, there are core model compon
 
    - *PolishSaveGAresults(GAalgorithm, param_settings, fitnessfunction, otherperformancefunction, suffix)*<br><sub>This function polishes the results of the genetic algorithm and saves the results to csv files.<sub>
 
-4. **Calibration Results Analysis**  <a id="calibresults"></a>
+3. **Calibration Results Analysis**  <a id="calibresults"></a>
+
   An example Calibration result analysis script can be found [here](https://github.com/TabeaSonnenschein/CellAutDisp/blob/main/ExampleApplications/03CalibrationResultsAnalysisExample.py).
    - *saveMatrixPlotsPerMonth(matrixsize, meteoparams, meteovalues_df, meteolog = False, suffix = "", addMeteodata = False)*<br><sub>This function saves the weighted matrix plots for each month. The addMeteodata boolean parameter sets whether to add the meteorological data as text to the plot. it also adds and arrow to the plot to indicate the wind direction.<sub>
 
@@ -114,7 +116,7 @@ Apart from the steps for preparing the CA-LUR model, there are core model compon
 
    - *saveNO2predictions(raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, repeatsparams, meteovalues_df, morphparams = None, scalingcoeffs = [1,1,1], moderator_df = None, iter = True, baseline = False, meteolog = False, suffix = "")*<br><sub> This function saves the NO2 predictions per hour and month to a csv file and print the summary statistics of the predictions. It will select the correct dispersion model based on the input parameters.<sub>
    
-5. **Simple Scenario Modeling** <a id="scenariomodeling"></a>
+4. **Simple Scenario Modeling** <a id="scenariomodeling"></a>
 
   An example script for saving the predictions and scenario results can be found [here](https://github.com/TabeaSonnenschein/CellAutDisp/blob/main/ExampleApplications/04SavePredictionsExample.py), while a script for visualizing the results can be found [here](https://github.com/TabeaSonnenschein/CellAutDisp/blob/main/ExampleApplications/05PredictionAnalysisExample.py).
 
@@ -123,8 +125,7 @@ Apart from the steps for preparing the CA-LUR model, there are core model compon
    - *SaveScenarioPlot(ScenarioNO2predictions, ylimmin1 = 25,ylinmax1 = 300, ylimmin2 = 15,ylinmax2 = 35, showplots = False, suffix = "")*<br><sub> This function saves a plot of the NO2 predictions for a set of simple traffic scenarios. The plot is a split y-axis plot with the traffic scenarios on the x-axis and the NO2 values on the y-axis. There are lines for the maximum and mean NO2 values for all cells, the mean NO2 values for the cells on the road, and the mean NO2 values for the cells neighboring the road (latter is optional). The function takes a ScenarioNO2predictions dataframe as input, which is the result of the saveTraffScenarioNO2predictions function.<sub>
 
    
-6. **Integration into other Models (e.g. more complex Scenario Models, Agent-based Models, ect.)** 
-<a id="modelintegration"></a>
+5. **Integration into other Models (e.g. more complex Scenario Models, Agent-based Models, ect.)** <a id="modelintegration"></a>
 
 ```
 from CellAutDisp import your_function
