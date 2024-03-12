@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import xarray as xr
 import json
-from CellAutDisp import saveMonthlyHourlyPredictions, saveTrafficScenarioPredictions, measureMonthlyHourlyComputationTime
+from CellAutDisp import returnCorrectWeightedMatrix, provide_adjuster, compute_hourly_dispersion
 
 dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
 os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
@@ -31,13 +31,21 @@ Pred_df.fillna(0, inplace=True)
 
 data_presets = {
     "raster": airpoll_grid_raster,
-    "TrafficNO2perhour": Pred_df[["NO2_0_1_TraffNoBase", "NO2_1_2_TraffNoBase", "NO2_2_3_TraffNoBase", "NO2_3_4_TraffNoBase", "NO2_4_5_TraffNoBase", "NO2_5_6_TraffNoBase", "NO2_6_7_TraffNoBase", "NO2_7_8_TraffNoBase",
-                          "NO2_8_9_TraffNoBase", "NO2_9_10_TraffNoBase", "NO2_10_11_TraffNoBase", "NO2_11_12_TraffNoBase", "NO2_12_13_TraffNoBase", "NO2_13_14_TraffNoBase", "NO2_14_15_TraffNoBase", "NO2_15_16_TraffNoBase",
-                          "NO2_16_17_TraffNoBase", "NO2_17_18_TraffNoBase", "NO2_18_19_TraffNoBase", "NO2_19_20_TraffNoBase", "NO2_20_21_TraffNoBase", "NO2_21_22_TraffNoBase",
-                          "NO2_22_23_TraffNoBase", "NO2_23_24_TraffNoBase"]],
     "baselineNO2": Pred_df["baseline_NO2"],
-    "onroadindices": Pred_df.loc[Pred_df["ON_ROAD"] == 1].index.to_list(),
-    "meteovalues_df": monthlyWeather2019[["Temperature", "Rain", "Windspeed", "Winddirection"]],
-    "moderator_df": moderator_df
+    "onroadindices": Pred_df.loc[Pred_df["ON_ROAD"] == 1].index.to_list()
 }
 
+current_weather = monthlyWeather2019[["Temperature", "Rain", "Windspeed", "Winddirection"]].iloc[0]
+currentTrafficNO2 = Pred_df["NO2_0_1_TraffNoBase"]
+
+weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= optimalparams["meteoparams"], meteovalues = current_weather)
+adjuster = provide_adjuster( morphparams = optimalparams["morphparams"], GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
+                            NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
+                            neigh_height_diff = moderator_df["neigh_height_diff"])
+
+FinalNO2 = compute_hourly_dispersion(**data_presets, weightmatrix = weightmatrix,
+                          adjuster = adjuster, iter= iter, baseline = True,
+                          TrafficNO2 = currentTrafficNO2,  nr_repeats, 
+                          baseline_coeff = optimalparams["scalingparams"][0], 
+                          traffemissioncoeff_onroad= optimalparams["scalingparams"][1],
+                          traffemissioncoeff_offroad= optimalparams["scalingparams"][2])

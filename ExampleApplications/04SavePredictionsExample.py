@@ -44,13 +44,13 @@ data_presets = {
 }
 
 saveMonthlyHourlyPredictions(**data_presets, **optimalparams, iter = iter, 
-                               baseline = True, meteolog = iter, suffix= cellsize)
+                               baseline = True, meteolog = meteolog, suffix= cellsize)
 
 Scenarios = [0, 0.5, 1, 1.5, 2, 2.5, 3]
 saveTrafficScenarioPredictions( trafficfactors = Scenarios, **data_presets, 
                                **optimalparams, iter = iter, baseline = True, 
-                                meteolog = iter, suffix= cellsize +"xd", 
+                                meteolog = meteolog, suffix= cellsize, 
                                 cellsubgroups = Pred_df[["int_id", "ON_ROAD", "ROAD_NEIGHBOR"]])
 
 measureMonthlyHourlyComputationTime(**data_presets, **optimalparams, iter = iter, 
-                               baseline = True, meteolog = iter, suffix= cellsize)
+                               baseline = True, meteolog = meteolog, suffix= cellsize)
