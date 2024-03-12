@@ -127,10 +127,16 @@ Apart from the steps for preparing the CA-LUR model, there are core model compon
    
 5. **Integration into other Models (e.g. more complex Scenario Models, Agent-based Models, ect.)** <a id="modelintegration"></a>
 
-```
-from CellAutDisp import your_function
+Since morphology is static, the adjuster vector can be calculated once using the morphology data and calibrated morphparams and then used throughout all interations of the model.
 
-result = your_function(argument1, argument2)
+The meteorology-defined moving window varies per month and can be hence reused for estimations within a month. We offer the function .. to save the weightmatrix per months, so it can be simply loaded when needed. 
+
+Finally the function
+
+```
+from CellAutDisp import compute_hourly_dispersion
+
+result = compute_hourly_dispersion(argument1, argument2)
 print(result)
 ```
 

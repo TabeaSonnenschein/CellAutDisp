@@ -12,7 +12,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         # List your dependencies here
-        'numpy',
+        'numpy>=1.23.5',
         'pandas',
         'matplotlib',
         'seaborn',
@@ -25,7 +25,10 @@ setup(
         'scipy',
         'xarray',
         'scikit-learn',
-        'pyarrow>=14.0.1'
+        'pyarrow>=14.0.1',
+        'dask_expr',
+        'dask==2023.7.1',
+        'urllib3==1.26.16'
     ],
     entry_points={
         'console_scripts': [

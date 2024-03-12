@@ -47,10 +47,10 @@ adjuster = provide_adjuster( morphparams = optimalparams["morphparams"], GreenCo
                             neigh_height_diff = moderator_df["neigh_height_diff"])
 
 # weightmatrix and nr_repeats are dynamic variables that change with the weather (in our case monthly)
-current_weather = monthlyWeather2019[["Temperature", "Rain", "Windspeed", "Winddirection"]].iloc[0]
+current_weather = list(monthlyWeather2019[["Temperature", "Rain", "Windspeed", "Winddirection"]].iloc[0])
 
 weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= optimalparams["meteoparams"], meteovalues = current_weather)
-nr_repeats = provide_meteorepeats(optimalparams["repeatsparams"], current_weather["Windspeed"])
+nr_repeats = provide_meteorepeats(optimalparams["repeatsparams"], current_weather[2])
 
 # the most dynamic variable is the traffic NO2
 currentTrafficNO2 = Pred_df["NO2_0_1_TraffNoBase"]
@@ -58,6 +58,8 @@ currentTrafficNO2 = Pred_df["NO2_0_1_TraffNoBase"]
 FinalNO2 = compute_hourly_dispersion(**data_presets, weightmatrix = weightmatrix,
                           adjuster = adjuster, TrafficNO2 = currentTrafficNO2,  
                           nr_repeats = nr_repeats, **param_presets)
+
+print(FinalNO2.head(20))
 
 # you can integrate the function and data in a loop or simulation model 
 # to calculate the dispersion for each hour and month
