@@ -29,7 +29,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'mypackage-cli = mypackage.module1:main_function',
+            'CellAutDisp-apply = CellAutDisp.cellautom_dispersion:compute_hourly_dispersion',
         ],
     },
     long_description=long_description,

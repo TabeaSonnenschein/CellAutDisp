@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import xarray as xr
 import json
-from CellAutDisp import returnCorrectWeightedMatrix, provide_adjuster, compute_hourly_dispersion
+from CellAutDisp import returnCorrectWeightedMatrix, provide_adjuster, provide_meteorepeats, compute_hourly_dispersion
 
 dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
 os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
@@ -10,7 +10,6 @@ os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
 ## Set the parameters
 cellsize = "25m"
 suffix = "TrV_TrI_noTrA2"
-calibdata = "Palmes"
 GA = True
 if cellsize == "50m":
     meteolog = False
@@ -34,18 +33,31 @@ data_presets = {
     "baselineNO2": Pred_df["baseline_NO2"],
     "onroadindices": Pred_df.loc[Pred_df["ON_ROAD"] == 1].index.to_list()
 }
+param_presets = {
+    "iter": iter, 
+    "baseline": True,
+    "baseline_coeff": optimalparams["scalingparams"][0], 
+    "traffemissioncoeff_onroad": optimalparams["scalingparams"][1],
+    "traffemissioncoeff_offroad": optimalparams["scalingparams"][2]
+}
 
-current_weather = monthlyWeather2019[["Temperature", "Rain", "Windspeed", "Winddirection"]].iloc[0]
-currentTrafficNO2 = Pred_df["NO2_0_1_TraffNoBase"]
-
-weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= optimalparams["meteoparams"], meteovalues = current_weather)
+# adjuster is a static variable
 adjuster = provide_adjuster( morphparams = optimalparams["morphparams"], GreenCover = moderator_df["GreenCover"], openspace_fraction = moderator_df["openspace_fraction"], 
                             NrTrees =  moderator_df["NrTrees"], building_height = moderator_df["building_height"], 
                             neigh_height_diff = moderator_df["neigh_height_diff"])
 
+# weightmatrix and nr_repeats are dynamic variables that change with the weather (in our case monthly)
+current_weather = monthlyWeather2019[["Temperature", "Rain", "Windspeed", "Winddirection"]].iloc[0]
+
+weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams= optimalparams["meteoparams"], meteovalues = current_weather)
+nr_repeats = provide_meteorepeats(optimalparams["repeatsparams"], current_weather["Windspeed"])
+
+# the most dynamic variable is the traffic NO2
+currentTrafficNO2 = Pred_df["NO2_0_1_TraffNoBase"]
+
 FinalNO2 = compute_hourly_dispersion(**data_presets, weightmatrix = weightmatrix,
-                          adjuster = adjuster, iter= iter, baseline = True,
-                          TrafficNO2 = currentTrafficNO2,  nr_repeats, 
-                          baseline_coeff = optimalparams["scalingparams"][0], 
-                          traffemissioncoeff_onroad= optimalparams["scalingparams"][1],
-                          traffemissioncoeff_offroad= optimalparams["scalingparams"][2])
+                          adjuster = adjuster, TrafficNO2 = currentTrafficNO2,  
+                          nr_repeats = nr_repeats, **param_presets)
+
+# you can integrate the function and data in a loop or simulation model 
+# to calculate the dispersion for each hour and month
