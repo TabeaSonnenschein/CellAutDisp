@@ -24,7 +24,7 @@ Broadly speaking the suggested order of steps are:
 2. [Calibration](#calibration)
 3. [Calibration Results Analysis](#calibresults)
 4. [Scenario Analysis](#scenariomodeling)
-5. [Use of calibrated final model](#modelintegration)
+5. [Integration of calibrated final model](#modelintegration)
 
 
 Apart from the steps for preparing the CA-LUR model, there are core model components and functions that together make up the CA-LUR model.
@@ -118,7 +118,8 @@ Apart from the steps for preparing the CA-LUR model, there are core model compon
 5. **Integration into other Models (e.g. more complex Scenario Models, Agent-based Models, ect.)** 
 <a id="modelintegration"></a>
 
-```from CellAutDisp import your_function
+```
+from CellAutDisp import your_function
 
 result = your_function(argument1, argument2)
 print(result)
