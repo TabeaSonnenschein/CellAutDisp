@@ -6,7 +6,7 @@ This Python package provides functionalities for the dispersion modeling of traf
 
 - [Installation](#installation)
 - [Usage](#usage)
-- [Contributing](#contributing)
+- [Steps](#steps)
 - [License](#license)
 
 ## Installation
@@ -19,12 +19,12 @@ pip install CellAutDisp
 This instruction manual explains the steps and usage of functions for the purpose of traffic onroad to off road dispersion modeling. Selected important functions including their inputs are casted in italic for ease of identification. 
 
 
-Broadly speaking the steps are:
+Broadly speaking the suggested order of steps are:
 1. [Data Preparation](#data-preparation)
 2. [Calibration](#calibration)
-3. Calibration Results Analysis
-4. Scenario Analysis
-5. Use of calibrated final model
+3. [Calibration Results Analysis](#calibresults)
+4. [Scenario Analysis](#scenariomodeling)
+5. [Use of calibrated final model](#modelintegration)
 
 
 Apart from the steps for preparing the CA-LUR model, there are core model components and functions that together make up the CA-LUR model.
@@ -32,7 +32,7 @@ Apart from the steps for preparing the CA-LUR model, there are core model compon
 **Dispersion Model Components**
    
    1. meteorology weighted moving window
-    - *returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams, meteovalues)*<br>
+  - *returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams, meteovalues)*<br>
       <sub> This function returns the correct weighted matrix based on the meteolog parameter. If set to True, the log of the meteorological values is taken apart from winddirection. It creates a matrix of weights based on meteorological parameters and wind direction. It takes the distance and degree vectors and calculates the  weight for each cell based on the distance and degree alignment as well as the meteorological factors.  The input meteoparams is a list of 9 parameters that need to be calibrated using the calibration module.<sub>
    
    2. morphology based adjuster
@@ -102,23 +102,23 @@ Apart from the steps for preparing the CA-LUR model, there are core model compon
 
    - *PolishSaveGAresults(GAalgorithm, param_settings, fitnessfunction, otherperformancefunction, suffix)*<br><sub>This function polishes the results of the genetic algorithm and saves the results to csv files.<sub>
 
-3. **Calibration Results Analysis** 
+3. **Calibration Results Analysis**  <a id="calibresults"></a>
    - *saveMatrixPlotsPerMonth(matrixsize, meteoparams, meteovalues_df, meteolog = False, suffix = "", addMeteodata = False)*<br><sub>This function saves the weighted matrix plots for each month. The addMeteodata boolean parameter sets whether to add the meteorological data as text to the plot. it also adds and arrow to the plot to indicate the wind direction.<sub>
 
    - *jointMatrixVisualisation(figures_directory, matrixsize, suffix = "")* <br><sub>This function creates a combined figure of the weighted matrices for each month.<sub>
 
    - *saveNO2predictions(raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, repeatsparams, meteovalues_df, morphparams = None, scalingcoeffs = [1,1,1], moderator_df = None, iter = True, baseline = False, meteolog = False, suffix = "")*<br><sub> This function saves the NO2 predictions per hour and month to a csv file and print the summary statistics of the predictions. It will select the correct dispersion model based on the input parameters.<sub>
    
-4. **Simple Scenario Modeling**
+4. **Simple Scenario Modeling** <a id="scenariomodeling"></a>
    - *saveTraffScenarioNO2predictions(trafficfactors, raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, repeatsparams, meteovalues_df, morphparams = None, scalingcoeffs = [1,1,1], moderator_df = None, iter = True, baseline = False, meteolog = False, suffix = "", roadneighborindices = None)*<br><sub> This function saves the NO2 predictions for a set of simple traffic scenarios to a csv file and prints the summary statistics of the predictions. The trafficscenarios are simple adjustments of the traffic and onroad NO2 by the specified factors. The trafficfactors parameters is that list of factors for the traffic scenarios. The function will select the correct dispersion model based on the input parameters.
 
    - *SaveScenarioPlot(ScenarioNO2predictions, ylimmin1 = 25,ylinmax1 = 300, ylimmin2 = 15,ylinmax2 = 35, showplots = False, suffix = "")*<br><sub> This function saves a plot of the NO2 predictions for a set of simple traffic scenarios. The plot is a split y-axis plot with the traffic scenarios on the x-axis and the NO2 values on the y-axis. There are lines for the maximum and mean NO2 values for all cells, the mean NO2 values for the cells on the road, and the mean NO2 values for the cells neighboring the road (latter is optional). The function takes a ScenarioNO2predictions dataframe as input, which is the result of the saveTraffScenarioNO2predictions function.<sub>
 
    
 5. **Integration into other Models (e.g. more complex Scenario Models, Agent-based Models, ect.)** 
+<a id="modelintegration"></a>
 
-
-```from your_package_name import your_function
+```from CellAutDisp import your_function
 
 result = your_function(argument1, argument2)
 print(result)
