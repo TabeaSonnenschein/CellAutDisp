@@ -66,21 +66,21 @@ Apart from the steps for preparing the CA-LUR model, there are core model compon
 
   An example data preparation script can be found [here](https://github.com/TabeaSonnenschein/CellAutDisp/blob/main/ExampleApplications/01DataPreparationExample.py).
 
-   1.1 Required Data:
+  1.1 Required Data:
    - baseline NO2
    - Traffic NO2 on roads
    - offroad measurement data for calibration (best also for external validation)
    - meteorological data
    - morphological data
 
-   1.2 Data Processing:
+  1.2 Data Processing:
    - *create_traffic_emission_columns(df, traff_coeff=np.nan,  TrI_coeff=np.nan, traffroadlength_coeff=np.nan, suffix="")*<br>
       <sub>Calculate traffic-related NO2 emissions based on traffic LUR coefficients and traffic data and the baseline NO2 and produce the Predictor Dataframe (Pred_df.csv) accordingly. The function also saves the Pred_df with the indicated suffix to a csv file.<sub>
       
    - *create_Eval_df(grid_sp, gridID, point_observations, observationsID, observations_colnames, desired_observation_colnames = None, suffix = "")*<br>
      <sub>This function takes a grid and point observations and returns a DataFrame with the observations joined to the grid. The function also saves the DataFrame (Eval_df) to a csv file.<sub>
 
-   1.3 Initial Analytics:
+  1.3 Initial Analytics:
    - *PrintSaveSummaryStats(df, dfname, suffix = "")*
    - *SingleVarViolinplot(df,variable, ylabel = None, filesuffix = None)*
 
@@ -97,9 +97,9 @@ Apart from the steps for preparing the CA-LUR model, there are core model compon
       3. "meteonrrepeat"
       4. "scaling"
    
-   For an example of such a calibration script see:
+  For an example of such a calibration script see:
 
-   Important Functions:
+  Important Functions:
    - *makeFitnessfunction(calibtype, nr_cpus, matrixsize, raster, baselineNO2, TrafficNO2perhour, onroadindices, observations,  meteovalues_df, metric = "R2", uniqueparams = {},  moderator_df = None)* <br><sub>This function creates a fitness function for the calibration of the dispersion model. The fitness function is dependent on the calibration type and the metric. The calibration type can be one of "meteomatrixsizerepeats", "morph", "meteonrrepeat". The metric can be one of "R2", "RMSE". The uniqueparams argument should contain the parameters that are uniquely required for the calibration type. The moderator_df argument should be provided if the calibration type is "morph". The function returns two functions: the fitness function and the other performance function. The fitness function is the function that is minimized during calibration and is based on the specified metric. The other performance function is the function that is used to evaluate the performance of the model additionally after the calibration is complete.<sub>
 
    - *runGAalgorithm(fitnessfunction, param_settings, popsize, max_iter_noimprov, seed = None)* <br><sub>This function runs the genetic algorithm for the calibration of the dispersion model. The function returns the genetic algorithm object.<sub>
@@ -117,7 +117,7 @@ Apart from the steps for preparing the CA-LUR model, there are core model compon
 5. **Simple Scenario Modeling** <a id="scenariomodeling"></a>
 
   An example script for saving the predictions and scenario results can be found [here](https://github.com/TabeaSonnenschein/CellAutDisp/blob/main/ExampleApplications/04SavePredictionsExample.py), while a script for visualizing the results can be found [here](https://github.com/TabeaSonnenschein/CellAutDisp/blob/main/ExampleApplications/05PredictionAnalysisExample.py).
-  
+
    - *saveTraffScenarioNO2predictions(trafficfactors, raster, TrafficNO2perhour, baselineNO2, onroadindices, matrixsize, meteoparams, repeatsparams, meteovalues_df, morphparams = None, scalingcoeffs = [1,1,1], moderator_df = None, iter = True, baseline = False, meteolog = False, suffix = "", roadneighborindices = None)*<br><sub> This function saves the NO2 predictions for a set of simple traffic scenarios to a csv file and prints the summary statistics of the predictions. The trafficscenarios are simple adjustments of the traffic and onroad NO2 by the specified factors. The trafficfactors parameters is that list of factors for the traffic scenarios. The function will select the correct dispersion model based on the input parameters.
 
    - *SaveScenarioPlot(ScenarioNO2predictions, ylimmin1 = 25,ylinmax1 = 300, ylimmin2 = 15,ylinmax2 = 35, showplots = False, suffix = "")*<br><sub> This function saves a plot of the NO2 predictions for a set of simple traffic scenarios. The plot is a split y-axis plot with the traffic scenarios on the x-axis and the NO2 values on the y-axis. There are lines for the maximum and mean NO2 values for all cells, the mean NO2 values for the cells on the road, and the mean NO2 values for the cells neighboring the road (latter is optional). The function takes a ScenarioNO2predictions dataframe as input, which is the result of the saveTraffScenarioNO2predictions function.<sub>
