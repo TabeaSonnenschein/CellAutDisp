@@ -9,6 +9,9 @@ import json
 #################################################
 ## This script is an example of how to use the functions in the CellAutDisp package
 ## to calibrate the model using parallelized genetic algorithm in a stepwise manner (calibrating and adding model components).
+## The calibtype determines the component that is calibrated: meteomatrixsizerepeats, morph, meteonrrepeat, addtempdiff, scaling, allparams
+## Further, calibtype can be set to "produceMonthlyHourlyPerformance" for the final model performance evaluation.
+##
 ## Please adjust the following parameters to your specific case:
 ## - data folder
 ## - cellsize
