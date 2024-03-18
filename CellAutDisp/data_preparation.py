@@ -97,7 +97,7 @@ def create_traffic_emission_columns(df, id, TrV_coeff=np.nan, TrI_coeff=np.nan, 
         print("only traffic intensity")
         df[TrafficNO2_nobaseline] = df[traffIntenshours] * TrI_coeff
 
-    df[TrafficNO2_nobaseline].fillna(0, inplace=True)
+    df.fillna(0, inplace=True)
     df[BaselineTrafficNO2] = df[TrafficNO2_nobaseline].add(df['baseline_NO2'].values, axis=0)
     df[TrafficNO2] = df[BaselineTrafficNO2]
     df.loc[df['ON_ROAD'] == 0, TrafficNO2] = 0
