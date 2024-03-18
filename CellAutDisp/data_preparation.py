@@ -123,7 +123,7 @@ def create_Eval_df(grid_sp, gridID, point_observations, observationsID, observat
     Returns:
         pd.DataFrame: DataFrame (Eval_df) with the observations joined to the grid.
     """
-    gridjoin = gpd.tools.sjoin(point_observations[[observationsID]+observations_colnames], grid_sp, how="inner", op='intersects')
+    gridjoin = gpd.tools.sjoin(point_observations[[observationsID]+observations_colnames + ["geometry"]], grid_sp, how="inner", op='intersects')
     gridjoin = gridjoin.dropna(subset=['index_right'])
     gridjoin[gridID] = gridjoin["index_right"]
     gridjoin = gridjoin[[observationsID, gridID]+observations_colnames]
