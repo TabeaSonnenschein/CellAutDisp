@@ -18,7 +18,7 @@ import json
 #################################################
 
 # Set the data folder
-dataFolder = "/Users/tsonnens/Documents/CellAutDisp_pckg_data/test_data_CellAutDisp"
+dataFolder = "C:/Users/Tabea/Documents/CellAutDisp_pckg_data/test_data_CellAutDisp"
 os.chdir(dataFolder)
 
 ## Set the parameters
@@ -29,12 +29,12 @@ suffix = "TrV_TrI_noTrA"
 
 # calibtype should be one of: meteomatrixsizerepeats, morph, meteonrrepeat, addtempdiff, scaling, allparams, produceMonthlyHourlyPerformance
 calibtype = "meteomatrixsizerepeats" 
-popsize, max_iter_noimprov, seed = 20, 5, 42
+popsize, max_iter_noimprov, seed = 30, 5, 42 #set low for initial testing
 calibdata = "Palmes"
 GA = True
 meteolog = False
 iter = False
-print_test = True
+print_test = True # if True, the fitness function and other performance functions are tested with a set of parameters (set to optimal ones for 50m from the published paper)
 
 
 # Read raster data and DataFrames
@@ -91,7 +91,6 @@ if calibtype == "meteomatrixsizerepeats":
                                             metric = objectivefunction)
     if print_test:
         testparams = [2, 0.409800614, 0.011336538, 0.162193556, -0.096161606, 0.674606756, 0.830105679, 0.304843606,0.077548563,4.926544219]
-        # testparams = [3.939325437, 0.992765078, 1.999647532,1.966431142,1.978174772,1.847262043,0.019670796,1.764727078,1.570765248,0.061130477]
         fitnessfunction(testparams)
         otherperformancefunction(testparams)
         cal.computehourlymonthlyperformance(meteoparams = testparams[1:], repeatsparams=[testparams[0]], 
@@ -120,8 +119,6 @@ elif calibtype == "morph":
                                             metric = objectivefunction)
     if print_test:
         testparams = [-0.654798184, 0.965573098, 1.818205907, 0.985129934, 0.164442684, -0.175486638, 3.414866835, -0.314854772]
-        # testparams = [-1.968502876,-0.663703622,-1.711615426,-0.052620046,0.551063005,-0.289443887,3.624477135,-0.002618109]
-
         fitnessfunction(testparams)
         otherperformancefunction(testparams)
         del uniqueparamsRIVM["nr_repeats"]
@@ -153,8 +150,7 @@ elif calibtype == "meteonrrepeat":
                                             matrixsize = matrixsize, **data_presets, uniqueparams=uniqueparams, moderator_df = moderator_df,
                                             metric = objectivefunction)
     if print_test:
-        # testparams = [1.734685659, 0.416988784]
-        testparams = [ 1.341329988, 0.138203627]
+        testparams = [1.734685659, 0.416988784]
         fitnessfunction(testparams)
         otherperformancefunction(testparams)
         uniqueparamsRIVM = copy.deepcopy(uniqueparams)
@@ -193,11 +189,11 @@ elif calibtype == "addtempdiff":
         testparams = [0]
         fitnessfunction(testparams)
         otherperformancefunction(testparams)
-        # uniqueparamsRIVM = copy.deepcopy(uniqueparams)
-        # del uniqueparamsRIVM["adjuster"]
-        # uniqueparamsRIVM["morphparams"] = optimalparams["morphparams"]
-        # cal.computehourlymonthlyperformance(**data_presets_RIVM, matrixsize=matrixsize, 
-        #                                     **uniqueparamsRIVM, moderator_df = moderator_df)
+        uniqueparamsRIVM = copy.deepcopy(uniqueparams)
+        del uniqueparamsRIVM["adjuster"]
+        uniqueparamsRIVM["morphparams"] = optimalparams["morphparams"]
+        cal.computehourlymonthlyperformance(**data_presets_RIVM, matrixsize=matrixsize, 
+                                            **uniqueparamsRIVM, moderator_df = moderator_df)
     
 elif calibtype == "scaling":
     param_settings = cal.generateparambounds(calibtype)
@@ -227,7 +223,6 @@ elif calibtype == "scaling":
                                             metric = "R2")
     
     if print_test: 
-        # optimalparams50m=[1.05831854, 0.24452759, 0.14830991]
         optimalparams50m = [1.9983891,0.690864474,0.760965621]
         fitnessfunction(optimalparams50m)
         otherperformancefunction(optimalparams50m)

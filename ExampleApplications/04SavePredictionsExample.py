@@ -13,7 +13,7 @@ from CellAutDisp import saveMonthlyHourlyPredictions, saveTrafficScenarioPredict
 ##########################################################################################
 
 ## set directory
-dataFolder = "/Users/tsonnens/Documents/CellAutDisp_pckg_data/test_data_CellAutDisp"
+dataFolder = "C:/Users/Tabea/Documents/CellAutDisp_pckg_data/test_data_CellAutDisp"
 os.chdir(dataFolder)
 
 ## Set the parameters

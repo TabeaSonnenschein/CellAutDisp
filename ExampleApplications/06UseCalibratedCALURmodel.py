@@ -12,7 +12,7 @@ from CellAutDisp import returnCorrectWeightedMatrix, provide_adjuster, provide_m
 
 
 # Set the data folder
-dataFolder = "/Users/tsonnens/Documents/CellAutDisp_pckg_data/test_data_CellAutDisp"
+dataFolder = "C:/Users/Tabea/Documents/CellAutDisp_pckg_data/test_data_CellAutDisp"
 os.chdir(dataFolder)
 
 ## Set the parameters

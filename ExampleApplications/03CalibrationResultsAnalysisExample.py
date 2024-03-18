@@ -9,7 +9,7 @@ import json
 ###############################################################
 
 # Set the data folder
-dataFolder = "/Users/tsonnens/Documents/CellAutDisp_pckg_data/test_data_CellAutDisp"
+dataFolder = "C:/Users/Tabea/Documents/CellAutDisp_pckg_data/test_data_CellAutDisp"
 os.chdir(dataFolder)
 
 cellsize = "50m"
