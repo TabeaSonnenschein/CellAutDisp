@@ -7,9 +7,15 @@ import pandas as pd
 import geopandas as gpd
 from CellAutDisp import FindRoadNeighboringCells, create_traffic_emission_columns, create_Eval_df
 
+##########################################################################################
+## This script is an example of how to use the functions in the CellAutDisp package 
+## to create the Eval_df and Pred_df dataframes that are required for the model calibration.
+##########################################################################################
+
+
 # Set the data folder and cell size
-dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
-os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
+dataFolder = "/Users/tsonnens/Documents/CellAutDisp_pckg_data/test_data_CellAutDisp"
+os.chdir(dataFolder)
 cellsize = "50m"
 suffix = "TrV_TrI_test"
 
@@ -18,14 +24,14 @@ suffix = "TrV_TrI_test"
 ###########################
 
 AirPollGrid = gpd.read_file(f"AirPollDeterm_grid{cellsize}.shp")
-PalmesData = gpd.read_file(dataFolder + "/Air Pollution Determinants/PalmesOffRoadMeasurements/Palmesdata2019gridjoin.shp")
+PalmesData = gpd.read_file("Palmesdata2019gridjoin.shp")
 PalmesID = "Code"
 PalmesCols = ["Janry","Fbrry","March","April","May","June","July","Augst","Sptmb","Octbr","Nvmbr","Dcmbr"]
 Palmesdesiredcols =["palmesNO2_1","palmesNO2_2","palmesNO2_3", 
                "palmesNO2_4","palmesNO2_5","palmesNO2_6","palmesNO2_7",
                "palmesNO2_8","palmesNO2_9","palmesNO2_10", "palmesNO2_11",
                "palmesNO2_12"]
-RMSData = gpd.read_file(dataFolder + "/Air Pollution Determinants/RIVMhourlyOffRoadData/RIVMmonthlyhourly.shp")
+RMSData = gpd.read_file("RIVMmonthlyhourly.shp")
 RMSID = "SttnC"
 RMShourly = ["MeanNO2_0_1","MeanNO2_1_2","MeanNO2_2_3","MeanNO2_3_4", 
                           "MeanNO2_4_5","MeanNO2_5_6","MeanNO2_6_7","MeanNO2_7_8",

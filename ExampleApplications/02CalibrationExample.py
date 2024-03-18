@@ -6,23 +6,33 @@ import xarray as xr
 import copy
 import json
 
-# Set the data folder and cell size
-dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
-os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
+#################################################
+## This script is an example of how to use the functions in the CellAutDisp package
+## to calibrate the model using parallelized genetic algorithm in a stepwise manner (calibrating and adding model components).
+## Please adjust the following parameters to your specific case:
+## - data folder
+## - cellsize
+## - nr_cpus
+## - calibtype
+## - names and suffixes of your files
+#################################################
+
+# Set the data folder
+dataFolder = "/Users/tsonnens/Documents/CellAutDisp_pckg_data/test_data_CellAutDisp"
+os.chdir(dataFolder)
 
 ## Set the parameters
 cellsize = "50m"  #the matrix cell size
 print(cellsize) 
-nr_cpus = 15 # number of cpus to use for parallel processing
+nr_cpus = 14 # number of cores to use for parallel processing
 suffix = "TrV_TrI_noTrA"
-calibtype = "meteomatrixsizerepeats" # One of: meteomatrixsizerepeats, morph, meteonrrepeat, scaling, allparams
+
+# calibtype should be one of: meteomatrixsizerepeats, morph, meteonrrepeat, addtempdiff, scaling, allparams, produceMonthlyHourlyPerformance
+calibtype = "meteomatrixsizerepeats" 
 popsize, max_iter_noimprov, seed = 20, 5, 42
 calibdata = "Palmes"
 GA = True
-if cellsize == "50m":
-    meteolog = False
-else:
-    meteolog = True
+meteolog = False
 iter = False
 print_test = True
 
@@ -37,7 +47,7 @@ Pred_df.fillna(0, inplace=True)
 Eval_df["int_id"] = Eval_df["int_id"] -1 # then it works as indices
 Pred_df["int_id"] = Pred_df["int_id"] -1 # then it works as indices
 Eval_df["baseline_NO2"] = Pred_df["baseline_NO2"]
-monthlyWeather2019 = pd.read_csv(os.path.join(dataFolder, "Weather", "monthlyWeather2019TempDiff.csv")) # Read monthlyWeather2019 DataFrame
+monthlyWeather2019 = pd.read_csv("monthlyWeather2019TempDiff.csv") # Read monthlyWeather2019 DataFrame
 
 data_presets = {
     "raster": airpoll_grid_raster,

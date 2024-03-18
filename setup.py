@@ -28,7 +28,9 @@ setup(
         'pyarrow>=14.0.1',
         'dask_expr',
         'dask==2023.7.1',
-        'urllib3==1.26.16'
+        'urllib3==1.26.16',
+        'matplotlib_scalebar',
+        'func_timeout'
     ],
     entry_points={
         'console_scripts': [

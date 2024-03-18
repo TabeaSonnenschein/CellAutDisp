@@ -3,14 +3,19 @@ import os
 import pandas as pd
 import json
 
+###############################################################
+### This script is an example of how to use the functions in the CellAutDisp package
+### to create the analytics plots of the calibration results.
+###############################################################
 
-dataFolder = "D:/PhD EXPANSE/Data/Amsterdam/Air Pollution Determinants"
+# Set the data folder
+dataFolder = "/Users/tsonnens/Documents/CellAutDisp_pckg_data/test_data_CellAutDisp"
 os.chdir(dataFolder)
 
-cellsize = "25m"
+cellsize = "50m"
 matrixsize = 3
 iter = False
-meteolog = True
+meteolog = False
 
 monthlyWeather2019 = pd.read_csv("monthlyWeather2019TempDiff.csv") # Read monthlyWeather2019 DataFrame
 moderator_df = pd.read_csv(f"moderator_{cellsize}.csv")     # Read moderator DataFrame
@@ -31,7 +36,6 @@ analytics = [
 
 if "MonthlyMovingWindowMaps" in analytics:
     meteovalues_df= monthlyWeather2019[["Temperature", "Rain", "Windspeed", "Winddirection"]]
-    os.chdir(os.path.join(dataFolder, f"TrV_TrI_noTrA weightmatrices {cellsize}"))
     saveMatrixPlotsPerMonth(matrixsize, optimalparams["meteoparams"], meteovalues_df, meteolog = False, suffix=f"_{cellsize}", addMeteodata=True)
     jointMatrixVisualisation(os.getcwd(), matrixsize, suffix = f"_{cellsize}")
 

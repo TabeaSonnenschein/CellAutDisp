@@ -4,17 +4,22 @@ import xarray as xr
 import json
 from CellAutDisp import returnCorrectWeightedMatrix, provide_adjuster, provide_meteorepeats, compute_hourly_dispersion
 
-dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
-os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
+##########################################################################################
+### This script is an example of how to use the functions in the CellAutDisp package, and the calibrated parameters
+### to integrate the CA-LUR model into another other simulation to for example 
+### calculate the hourly dispersion of NO2 concentrations.
+##########################################################################################
+
+
+# Set the data folder
+dataFolder = "/Users/tsonnens/Documents/CellAutDisp_pckg_data/test_data_CellAutDisp"
+os.chdir(dataFolder)
 
 ## Set the parameters
-cellsize = "25m"
-suffix = "TrV_TrI_noTrA2"
+cellsize = "50m"
+suffix = "TrV_TrI_noTrA"
 GA = True
-if cellsize == "50m":
-    meteolog = False
-else:
-    meteolog = True
+meteolog = False
 iter = False
 matrixsize = 3
 with open(f"optimalparams_{cellsize}_scalingMS{matrixsize}iter{iter}MeteoLog{meteolog}.json", "r") as read_file:

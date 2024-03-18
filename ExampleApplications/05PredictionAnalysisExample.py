@@ -5,14 +5,24 @@ from shapely.geometry.point import Point
 from CellAutDisp import PrintSaveSummaryStats, MapSpatialDataFixedColorMapSetofVariables, ParallelMapSpatialDataFixedColorMap, ParallelMapSpatialData_StreetsFixedColorMap, ViolinOverTimeColContinous, SplitYAxis2plusLineGraph, meltPredictions, plotComputationTime,ViolinOverTimeColContinous_WithMaxSubgroups
 from joblib import Parallel, delayed
 
-dataFolder = "D:/PhD EXPANSE/Data/Amsterdam"
-os.chdir(os.path.join(dataFolder, "Air Pollution Determinants"))
+###############################################################
+### This script is an example of how to use the functions in the CellAutDisp package
+### to create the analytics plots of the prediction results.
+###############################################################
 
-cellsize = "25m"
-predsuffix = "TrV_TrI_noTrA22"
+# Set the data folder
+dataFolder = "/Users/tsonnens/Documents/CellAutDisp_pckg_data/test_data_CellAutDisp"
+os.chdir(dataFolder)
+
+cellsize = "50m"
+predsuffix = "TrV_TrI_noTrA"
 crs = 28992
 stressor = "NO2"
 unit = "(µg/m3)"
+
+nr_cpus =6 # number of cores to use for parallel processing
+parallelIfPossible = True
+
 analysistype = [
     "StatusQuoPredMaps", 
     "StatusQuoPredMapsZoomed", 
@@ -21,7 +31,6 @@ analysistype = [
     "ComputationTimeVisualisation"
     ]
 
-parallelIfPossible = True
 addStreet = False
 Neighborhoodextent = False
 
@@ -44,7 +53,7 @@ if any([x in analysistype for x in ["StatusQuoPredMaps", "StatusQuoPredMapsZoome
 
     if "StatusQuoPredMaps" in analysistype:
         if parallelIfPossible:
-            Parallel(n_jobs=15)(delayed(ParallelMapSpatialDataFixedColorMap)(variable = variable, title = labels[columnnames.index(variable)] , rasterdf = AirPollGrid_pred, jointlabel = stressor, 
+            Parallel(n_jobs=nr_cpus)(delayed(ParallelMapSpatialDataFixedColorMap)(variable = variable, title = labels[columnnames.index(variable)] , rasterdf = AirPollGrid_pred, jointlabel = stressor, 
                                                 vmin=0, vmax=65,distance_meters= distance_meters, cmap="turbo", suffix = cellsize) for variable in columnnames)
         else:
             MapSpatialDataFixedColorMapSetofVariables(variables = columnnames, rasterdf = AirPollGrid_pred, jointlabel = stressor, 
@@ -54,7 +63,7 @@ if any([x in analysistype for x in ["StatusQuoPredMaps", "StatusQuoPredMapsZoome
         if Neighborhoodextent:
             # 1) Defining extent based on neighborhood extent
             # zooming map into the extent of a specific neighborhood
-            Neighborhoods = gpd.read_file("D:/PhD EXPANSE/Data/Amsterdam/Administrative Units/Amsterdam_Neighborhoods_RDnew.shp")
+            Neighborhoods = gpd.read_file("Amsterdam_Neighborhoods_RDnew.shp")
             suffix = "Bosleeuw"
             # suffix = "Duivendrecht"
             Neighborhood = Neighborhoods[Neighborhoods["buurtnaam"] == suffix]
@@ -73,13 +82,13 @@ if any([x in analysistype for x in ["StatusQuoPredMaps", "StatusQuoPredMapsZoome
 
         if addStreet:
             # mapping cells plus streets with the extent
-            streets = gpd.read_feather("C:/Users/Tabea/Documents/PhD EXPANSE/Data/Amsterdam/FeatherDataABM/Streets.feather")
-            Parallel(n_jobs=15)(delayed(ParallelMapSpatialData_StreetsFixedColorMap)(variable = variable, title = labels[columnnames.index(variable)] , 
+            streets = gpd.read_feather("Streets.feather")
+            Parallel(n_jobs=nr_cpus)(delayed(ParallelMapSpatialData_StreetsFixedColorMap)(variable = variable, title = labels[columnnames.index(variable)] , 
                                                                                     rasterdf = AirPollGrid_pred_extent, streets = streets, jointlabel = stressor + " " + unit, 
                                                                                     vmin=0, vmax=65,distance_meters= distance_meters, cmap="turbo", suffix = cellsize + suffix) for variable in columnnames)
         else:
             # mapping the cells within the extent
-            Parallel(n_jobs=15)(delayed(ParallelMapSpatialDataFixedColorMap)(variable = variable, title = labels[columnnames.index(variable)] , rasterdf = AirPollGrid_pred_extent, jointlabel = stressor + " " + unit, 
+            Parallel(n_jobs=nr_cpus)(delayed(ParallelMapSpatialDataFixedColorMap)(variable = variable, title = labels[columnnames.index(variable)] , rasterdf = AirPollGrid_pred_extent, jointlabel = stressor + " " + unit, 
                                                     vmin=0, vmax=65,distance_meters= distance_meters, cmap="turbo", suffix = cellsize + suffix) for variable in columnnames)
 
 if "ViolinPlotsStressors" in analysistype:
@@ -90,23 +99,14 @@ if "ViolinPlotsStressors" in analysistype:
 
     # Violin plots for subsets of the data
     Pred_df = pd.read_csv(f"Pred_{cellsize}{predsuffix}.csv")               # Read Pred DataFrame
-    Predictions_melted = Predictions_melted.merge(Pred_df[["int_id", "ON_ROAD","ROAD_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR_NEIGHBOR"]], on="int_id", how="left")
+    Predictions_melted = Predictions_melted.merge(Pred_df[["int_id", "ON_ROAD","ROAD_NEIGHBOR"]], on="int_id", how="left")
     Predictions_melted_Onroad = Predictions_melted[Predictions_melted["ON_ROAD"] == 1]
     Predictions_melted_RoadNeighbor = Predictions_melted[Predictions_melted["ROAD_NEIGHBOR"] == 1]
     ViolinOverTimeColContinous(xvar = "month", yvar=stressor, showplots= False, df = Predictions_melted_Onroad, ylabel=stressor + " " + unit, xlabel = "Month", suffix= cellsize + "Onroad")
     ViolinOverTimeColContinous(xvar = "hour", yvar=stressor, showplots= False, df = Predictions_melted_Onroad, ylabel=stressor + " " + unit, xlabel = "Hour", suffix= cellsize +"Onroad")
     ViolinOverTimeColContinous(xvar = "month", yvar=stressor, showplots= False, df = Predictions_melted_RoadNeighbor, ylabel=stressor + " " + unit, xlabel = "Month", suffix= cellsize +"RoadNeighbor")
     ViolinOverTimeColContinous(xvar = "hour", yvar=stressor, showplots= False, df = Predictions_melted_RoadNeighbor, ylabel=stressor + " " + unit, xlabel = "Hour", suffix= cellsize +"RoadNeighbor")
-    
-    Predictions_melted = pd.read_csv(f"{stressor}predictions_melted_{cellsize}.csv")               # Read Pred DataFrame
-    Pred_df = pd.read_csv(f"Pred_{cellsize}{predsuffix}.csv")               # Read Pred DataFrame
-    Pred_df.loc[(Pred_df["ON_ROAD"] == 1) | (Pred_df["ROAD_NEIGHBOR"] == 1), ["ROAD_NEIGHBOR_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR_NEIGHBOR"]] = 0
-    Pred_df.loc[Pred_df["ROAD_NEIGHBOR_NEIGHBOR"] == 1, "ROAD_NEIGHBOR_NEIGHBOR_NEIGHBOR"] = 0
-    print(Pred_df[["ON_ROAD","ROAD_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR_NEIGHBOR"]].head(20))
-    Predictions_melted = Predictions_melted.merge(Pred_df[["int_id", "ON_ROAD","ROAD_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR_NEIGHBOR"]], on="int_id", how="left")
-    ViolinOverTimeColContinous_WithMaxSubgroups(xvar = "month", yvar=stressor, showplots= False, df = Predictions_melted,subgroups=["ON_ROAD","ROAD_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR"], subgrouplabels=["on road", "neighboring road", "neighboring road neighbor"], ylabel=stressor + " " + unit, xlabel = "Month", suffix= cellsize )
-    ViolinOverTimeColContinous_WithMaxSubgroups(xvar = "hour", yvar=stressor, showplots= False, df = Predictions_melted,subgroups=["ON_ROAD","ROAD_NEIGHBOR", "ROAD_NEIGHBOR_NEIGHBOR"], subgrouplabels=["on road", "neighboring road", "neighboring road neighbor"], ylabel=stressor + " " + unit, xlabel = "Hour", suffix= cellsize )
-
+   
 if "ScenarioLinePlot" in analysistype:
     ScenarioPredictions = pd.read_csv(f"Scenario{stressor}predictions_{cellsize}.csv")
     ylimmin1 = ScenarioPredictions["Max"].min() -1
