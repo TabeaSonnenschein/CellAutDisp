@@ -134,9 +134,17 @@ The meteorology-defined moving window varies per month and can be hence reused f
 Finally the function
 
 ```
-from CellAutDisp import compute_hourly_dispersion
+from CellAutDisp import compute_hourly_dispersion, provide_adjuster_flexible, returnCorrectWeightedMatrix
 
-result = compute_hourly_dispersion(argument1, argument2)
+# adjuster just has to be computed once. Since morphological factors remain constant (unless you want to include changing ones in your simulation).
+adjuster = provide_adjuster_flexible( morphparams, morphdata)
+
+# the weightmatrix has to be computed only when the weather changes and can be theoretically presaved and accessed per months.
+weightmatrix = returnCorrectWeightedMatrix(meteolog, matrixsize, meteoparams, meteovalues)
+
+# the dispersion model can be followingly applied whenever you have a change of traffic emissions to simulate the dispersed map.
+result = compute_hourly_dispersion(raster, TrafficNO2, baselineNO2, onroadindices, weightmatrix, nr_repeats, 
+                              adjuster, iter, baseline,  baseline_coeff, traffemissioncoeff_onroad,  traffemissioncoeff_offroad)
 print(result)
 ```
 
