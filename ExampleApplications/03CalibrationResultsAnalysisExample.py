@@ -24,9 +24,9 @@ os.chdir(new_folder)
         
 analytics = [
     "MonthlyMovingWindowMaps", 
-    # "HourlyMonthlyPerformanceCharts", 
-    # "MonthlyPerformanceCharts",
-    # "AdjusterHistogram",
+    "HourlyMonthlyPerformanceCharts", 
+    "MonthlyPerformanceCharts",
+    "AdjusterHistogram",
     ]
 
 if "MonthlyMovingWindowMaps" in analytics:
