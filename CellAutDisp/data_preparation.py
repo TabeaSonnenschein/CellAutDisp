@@ -90,16 +90,18 @@ def create_traffic_emission_columns(df, id, TrV_coeff=np.nan, TrI_coeff=np.nan, 
     elif not np.isnan(TrI_coeff) and not np.isnan(TrV_coeff):
         print("with traffic intensity and traffic volume")
         TrVsubset = df[traffVolhours].copy() * TrV_coeff
-        df[TrafficNO2_nobaseline] = TrVsubset.add(df[traffIntenshours] * TrI_coeff, fill_value=0)
+        TrIsubset = df[traffIntenshours].copy() * TrI_coeff
+        TrIsubset.columns = TrVsubset.columns
+        df[TrafficNO2_nobaseline] = TrVsubset.add(TrIsubset, fill_value=0)
     elif not np.isnan(TrI_coeff) and np.isnan(TrV_coeff):
         print("only traffic intensity")
         df[TrafficNO2_nobaseline] = df[traffIntenshours] * TrI_coeff
 
     df[TrafficNO2_nobaseline].fillna(0, inplace=True)
-    df[BaselineTrafficNO2] = df[TrafficNO2_nobaseline] + df['baseline_NO2']
+    df[BaselineTrafficNO2] = df[TrafficNO2_nobaseline].add(df['baseline_NO2'].values, axis=0)
     df[TrafficNO2] = df[BaselineTrafficNO2]
     df.loc[df['ON_ROAD'] == 0, TrafficNO2] = 0
-    df_final = df.loc[:,[id, "baseline_NO2","ON_ROAD", TrafficNO2_nobaseline, TrafficNO2, BaselineTrafficNO2]]
+    df_final = df.loc[:,[id, "baseline_NO2","ON_ROAD"] + TrafficNO2_nobaseline + TrafficNO2 + BaselineTrafficNO2]
     print(df_final.head(20))
     df_final.to_csv(f"Pred_{suffix}.csv", index=False)
     return df_final
