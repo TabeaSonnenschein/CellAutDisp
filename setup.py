@@ -30,7 +30,8 @@ setup(
         'dask==2023.7.1',
         'urllib3==1.26.16',
         'matplotlib_scalebar',
-        'func_timeout'
+        'func_timeout',
+        'rioxarray'
     ],
     entry_points={
         'console_scripts': [
