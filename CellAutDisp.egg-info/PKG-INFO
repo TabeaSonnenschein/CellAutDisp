@@ -1,6 +1,7 @@
 Metadata-Version: 2.1
 Name: CellAutDisp
 Version: 0.1
+Requires-Python: >=3.9
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: numpy>=1.23.5
