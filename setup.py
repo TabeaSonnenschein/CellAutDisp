@@ -8,7 +8,7 @@ with open("README.md", "r") as read_file:
 
 setup(
     name='CellAutDisp',
-    version='0.1',
+    version='0.2',
     python_requires='>=3.9',
     packages=find_packages(),
     install_requires=[
