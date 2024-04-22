@@ -1,0 +1,2 @@
+[console_scripts]
+CellAutDisp-apply = CellAutDisp.cellautom_dispersion:compute_hourly_dispersion
